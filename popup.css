@@ -1,0 +1,280 @@
+:root {
+  color-scheme: dark;
+  --bg: #151412;
+  --surface: #1b1916;
+  --text: #beb9af;
+  --strong: #cbc6bb;
+  --muted: #77736b;
+  --track: #302d28;
+  --moss: #81927a;
+  --amber: #ad9160;
+  --amber-dim: #3d3222;
+  --danger: #b97866;
+  --focus: #c5a975;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 380px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+body {
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.popup {
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-row,
+.metric-row,
+.credits-row,
+.status-row,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  display: block;
+}
+
+.brand {
+  margin: 0;
+  color: var(--amber);
+  font-size: var(--type-title-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-brand);
+}
+
+.plan-label {
+  margin: 0 0 14px;
+  color: var(--amber);
+  font-size: var(--type-body-sm);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* ---- metric blocks ---- */
+
+.metrics {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-title {
+  margin: 0 0 2px;
+  color: var(--text);
+  font-size: var(--type-body-sm);
+}
+
+.metric-row {
+  margin-bottom: 0;
+}
+
+.metric-reset {
+  color: var(--amber);
+  font-size: var(--type-body-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.metric-value {
+  margin: 0;
+  color: var(--moss);
+}
+
+.metric-value strong {
+  font-size: var(--type-metric-md);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value span {
+  margin-left: 4px;
+  font-size: var(--type-body-sm);
+}
+
+/* ---- progress tracks ---- */
+
+.track {
+  width: 100%;
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  background: var(--track);
+}
+
+.track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--moss);
+  transition: width 350ms ease;
+}
+
+.credits-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+}
+
+.credits-row strong {
+  color: var(--amber);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-row {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+}
+
+.status-row p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--moss);
+}
+
+.status-row[data-state="stale"] .status-dot {
+  background: var(--amber);
+}
+
+.status-row[data-state="error"] .status-dot {
+  background: var(--danger);
+}
+
+.empty-state {
+  margin: 42px 0 auto;
+  padding: 26px 22px;
+  border: 1px solid var(--amber-dim);
+  background: var(--surface);
+}
+
+.empty-state strong {
+  color: var(--strong);
+  font-size: var(--type-body-md);
+  font-weight: var(--weight-medium);
+}
+
+.empty-state p {
+  margin: 9px 0 18px;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  line-height: var(--leading-body);
+}
+
+.empty-state button {
+  padding: 0;
+  border: 0;
+  color: var(--amber);
+  background: transparent;
+  font-size: var(--type-body-sm);
+}
+
+.actions {
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.actions button {
+  min-height: 44px;
+  border-radius: 0;
+}
+
+.primary-button {
+  flex: 1;
+  border: 1px solid var(--amber);
+  color: #171511;
+  background: var(--amber);
+  font-size: var(--type-body-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.primary-button:hover {
+  background: #bca06d;
+}
+
+.secondary-button {
+  min-width: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--amber-dim);
+  color: var(--amber);
+  background: transparent;
+  font-size: var(--type-body-sm);
+}
+
+.secondary-button:hover {
+  background: var(--surface);
+}
+
+.secondary-button:disabled {
+  opacity: 0.48;
+  cursor: wait;
+}
+
+.secondary-button img {
+  width: 17px;
+  height: 17px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track span {
+    transition: none;
+  }
+}

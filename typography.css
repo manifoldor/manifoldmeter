@@ -1,0 +1,35 @@
+:root {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-default: 0;
+  --tracking-label: 0.12em;
+  --tracking-brand: 0.15em;
+  --tracking-display: -0.05em;
+
+  --leading-metric: 0.9;
+  --leading-display: 1.1;
+  --leading-ui: 1.4;
+  --leading-body: 1.65;
+
+  --type-caption: 12px;
+  --type-body-sm: 14px;
+  --type-body-md: 16px;
+  --type-title-sm: 18px;
+  --type-title-md: 24px;
+  --type-title-lg: 34px;
+  --type-display: clamp(46px, 6vw, 76px);
+  --type-metric-md: 36px;
+  --type-metric-xl: 92px;
+  --type-metric-unit: 16px;
+}
+
+body,
+button {
+  font-family: var(--font-sans);
+}

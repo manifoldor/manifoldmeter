@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self'; script-src 'self';" />
+  <title>Manifold Meter</title>
+  <link rel="stylesheet" href="typography.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="popup">
+    <header class="brand-row">
+      <div class="brand-group">
+        <img class="brand-logo" src="icons/logo.svg" alt="" width="28" height="28" />
+        <p class="brand">MANIFOLD METER</p>
+      </div>
+    </header>
+
+    <section id="data-section" class="metrics" hidden>
+      <p id="plan" class="plan-label">CODEX</p>
+      <div class="metric-block">
+        <p class="metric-title">当前</p>
+        <div class="metric-row">
+          <p class="metric-value"><strong id="primary-value">—</strong><span>% 剩余</span></p>
+          <span id="primary-reset" class="metric-reset">—</span>
+        </div>
+        <div
+          id="primary-track"
+          class="track"
+          role="progressbar"
+          aria-label="当前窗口剩余额度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <span id="primary-progress"></span>
+        </div>
+      </div>
+
+      <div class="metric-block">
+        <p class="metric-title">本周</p>
+        <div class="metric-row">
+          <p class="metric-value"><strong id="weekly-value">—</strong><span>% 剩余</span></p>
+          <span id="weekly-reset" class="metric-reset">—</span>
+        </div>
+        <div
+          id="weekly-track"
+          class="track"
+          role="progressbar"
+          aria-label="本周剩余额度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <span id="weekly-progress"></span>
+        </div>
+      </div>
+
+      <div class="credits-row">
+        <span>Credits</span>
+        <strong id="credits-value">—</strong>
+      </div>
+
+      <footer class="status-row">
+        <p>
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="sync-label">同步正常</span>
+        </p>
+        <span id="last-update">—</span>
+      </footer>
+    </section>
+
+    <section id="empty-section" class="empty-state" hidden>
+      <strong id="empty-title">等待用量数据</strong>
+      <p id="empty-copy">请确认 Chrome 已登录 ChatGPT，然后刷新一次。</p>
+      <button id="analytics-btn" type="button">打开 Codex 用量页</button>
+    </section>
+
+    <div class="actions">
+      <button id="dashboard-btn" class="primary-button" type="button">打开副屏</button>
+      <button id="refresh-btn" class="secondary-button" type="button">
+        <img src="icons/refresh.svg" alt="" aria-hidden="true" />
+        <span>刷新</span>
+      </button>
+    </div>
+  </main>
+
+  <script src="usage.js"></script>
+  <script src="format-utils.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
