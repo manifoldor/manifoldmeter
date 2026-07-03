@@ -39,14 +39,25 @@
     const rawResetAt = positiveNumberOrNull(windowData.reset_at);
 
     let resetAt = null;
+    let resetAtSource = null;
+    let absoluteResetAt = null;
     if (rawResetAt) {
       // API may return seconds or milliseconds.  Values ≤ 10^10 (~year 2286 in
       // seconds) are treated as seconds; larger values are kept as milliseconds.
       const asMs = rawResetAt > 10_000_000_000 ? rawResetAt : rawResetAt * 1000;
-      if (asMs > now) resetAt = asMs;
+      if (asMs > now) absoluteResetAt = asMs;
     }
-    if (!resetAt && resetAfterSeconds) {
+
+    // The relative duration describes the remaining time in the response that
+    // was just received. Prefer it when both fields are present: reset_at has
+    // been observed to remain stale while reset_after_seconds matches the
+    // current ChatGPT usage UI.
+    if (resetAfterSeconds) {
       resetAt = now + resetAfterSeconds * 1000;
+      resetAtSource = 'reset_after_seconds';
+    } else if (absoluteResetAt) {
+      resetAt = absoluteResetAt;
+      resetAtSource = 'reset_at';
     }
 
     return {
@@ -55,6 +66,10 @@
       limitWindowSeconds,
       resetAfterSeconds,
       resetAt,
+      resetAtSource,
+      resetAtDiscrepancyMs: resetAt && absoluteResetAt
+        ? Math.abs(resetAt - absoluteResetAt)
+        : null,
       windowLabel: windowLabel(limitWindowSeconds)
     };
   }
@@ -104,6 +119,15 @@
     };
   }
 
+  function weeklyWindow(usage) {
+    const secondary = usage?.secondaryWindow;
+    if (!secondary) return null;
+    return secondary.limitWindowSeconds === 604800 ||
+      secondary.windowLabel === 'weekly_label'
+      ? secondary
+      : null;
+  }
+
   function isWindowOutdated(windowData, now = Date.now()) {
     return Boolean(windowData?.resetAt && Number(windowData.resetAt) <= now);
   }
@@ -116,7 +140,7 @@
     if (!Number.isFinite(timestamp)) return true;
     if (now - timestamp > STALE_AFTER_MS) return true;
 
-    return [primary, usage?.secondaryWindow]
+    return [primary, weeklyWindow(usage)]
       .filter(Boolean)
       .some((windowData) => isWindowOutdated(windowData, now));
   }
@@ -125,6 +149,7 @@
     STALE_AFTER_MS,
     normalizeUsage,
     currentWindow,
+    weeklyWindow,
     isUsageStale
   });
 })(typeof globalThis !== 'undefined' ? globalThis : self);

@@ -65,7 +65,7 @@ function render(usage, error = null) {
   elements.emptySection.hidden = true;
 
   const primary = CodexUsage.currentWindow(usage);
-  const weekly = usage.secondaryWindow;
+  const weekly = CodexUsage.weeklyWindow(usage);
   const primaryRemaining = remainingOf(primary);
   const weeklyRemaining = weekly ? remainingOf(weekly) : null;
   const planName = usage.plan ? String(usage.plan).toUpperCase() : 'CHATGPT';
@@ -189,5 +189,5 @@ if (hasExtensionApi) {
 
 setInterval(() => {
   if (!latestUsage) return;
-  render(latestUsage);
+  render(latestUsage, latestError);
 }, 1000);

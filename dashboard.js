@@ -86,7 +86,7 @@ function render(usage, error = null) {
   latestUsage = usage;
   latestError = error;
   const primary = CodexUsage.currentWindow(usage);
-  const secondary = usage.secondaryWindow;
+  const secondary = CodexUsage.weeklyWindow(usage);
   const primaryRemaining = remainingOf(primary);
   const secondaryRemaining = secondary ? remainingOf(secondary) : null;
   const stale = CodexUsage.isUsageStale(usage);
@@ -172,8 +172,9 @@ function tick() {
     const primaryResetTime = formatResetTime(CodexUsage.currentWindow(latestUsage)?.resetAt);
     els.primaryReset.textContent = primaryResetTime;
     els.primaryResetSuffix.hidden = primaryResetTime === '--:--';
-    els.weeklyReset.textContent = latestUsage.secondaryWindow
-      ? formatWeeklyReset(latestUsage.secondaryWindow.resetAt)
+    const weekly = CodexUsage.weeklyWindow(latestUsage);
+    els.weeklyReset.textContent = weekly
+      ? formatWeeklyReset(weekly.resetAt)
       : '未提供周额度';
     els.lastUpdate.textContent = formatUpdatedAt(latestUsage.ts, '等待首次同步');
   }

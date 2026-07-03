@@ -24,7 +24,7 @@ const AUTH_SESSION_URLS = [
 let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
 let fetchInFlight = null;
-const { normalizeUsage } = CodexUsage;
+const { normalizeUsage, weeklyWindow } = CodexUsage;
 
 async function storeUsageError(status, source) {
   await chrome.storage.local.set({
@@ -244,7 +244,7 @@ function buildTitle(usage) {
   const primaryRemaining = remainingPercent(usage?.primaryWindow || usage);
   if (primaryRemaining === null) return 'Manifold Meter';
   const sessionSummary = `当前窗口剩余: ${primaryRemaining}%`;
-  const weeklyRemaining = remainingPercent(usage.secondaryWindow);
+  const weeklyRemaining = remainingPercent(weeklyWindow(usage));
 
   if (weeklyRemaining === null) return sessionSummary;
   return `${sessionSummary} • 本周剩余: ${weeklyRemaining}%`;

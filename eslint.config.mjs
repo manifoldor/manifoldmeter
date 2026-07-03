@@ -3,7 +3,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/**']
+    ignores: ['node_modules/**', 'dist/**']
   },
   eslint.configs.recommended,
   {

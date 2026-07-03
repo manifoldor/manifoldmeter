@@ -2,7 +2,5 @@ node_modules/
 .DS_Store
 *.zip
 !dist/*.zip
-store/
 design-audit/
-tests/
-scripts/
+dist/*/
