@@ -29,15 +29,20 @@
 
 ## 技术验证
 
-- [ ] 在全新 Chrome 配置中加载 `dist/manifold-meter-v2.0.2.zip`
+- [ ] 在全新 Chrome 配置中加载 `dist/manifold-meter-v2.0.3.zip`
 - [ ] 验证未登录状态
 - [ ] 验证 Plus/Pro 等实际套餐显示
 - [ ] 验证工具栏显示剩余百分比
 - [ ] 验证当前窗口、每周窗口和 Credits
-- [ ] 对照 ChatGPT 用量页验证当前窗口的具体重置时刻
+- [ ] 对照 ChatGPT 用量页验证当前窗口剩余百分比
+- [ ] 对照 ChatGPT 用量页验证当前窗口具体重置时刻（允许最多 1 分钟同步偏差）
+- [ ] 对照 ChatGPT 用量页验证每周剩余百分比
+- [ ] 对照 ChatGPT 用量页验证每周重置日期
+- [ ] 对照 ChatGPT 用量页验证 Credits 余额
 - [ ] 验证每周重置日期使用“X月X日”格式
 - [ ] 验证断网、401、超时和旧数据提示
 - [ ] 验证安装引导页和副屏全屏
+- [ ] 验证副屏可见时每 1 分钟自动刷新，隐藏时停止页面定时器
 - [x] 运行 `npm run check`
 - [x] 运行 `npm run store:assets`
 - [x] 运行 `npm run package`

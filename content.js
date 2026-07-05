@@ -58,6 +58,7 @@ async function runFetchAndStoreUsage() {
     if (accessToken) headers.authorization = `Bearer ${accessToken}`;
 
     const res = await fetchWithTimeout(USAGE_PATH, {
+      cache: 'no-store',
       credentials: 'include',
       headers
     });

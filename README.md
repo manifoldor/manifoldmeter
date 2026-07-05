@@ -14,7 +14,8 @@ Manifold Meter is a local-first Chrome extension for ambient AI usage monitoring
 - Optional credit balance
 - Toolbar badge with usage severity
 - Credit balance in both the popup and dashboard when available
-- Coordinated background refresh every 10 minutes
+- Automatic refresh every minute while the dashboard is visible, with a
+  coordinated 10-minute background fallback while it is hidden
 - Request timeout, refresh de-duplication, and explicit stale/error states
 - Manual refresh and stale-data states
 - Dedicated low-luminance secondary-display dashboard

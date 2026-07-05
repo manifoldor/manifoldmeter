@@ -1,10 +1,24 @@
 const SEGMENT_COUNT = 50;
+const VISIBLE_REFRESH_MS = 60_000;
 const CODEX_ANALYTICS_URL = 'https://chatgpt.com/codex/cloud/settings/analytics';
 const hasExtensionApi = typeof chrome !== 'undefined' &&
   chrome.storage?.local &&
   chrome.runtime?.sendMessage;
-const useDemoData = new URLSearchParams(location.search).has('demo') || !hasExtensionApi;
-const { remainingOf, formatClock, formatResetTime, formatWeeklyReset, formatUpdatedAt, createDemoUsage } = FormatUtils;
+const searchParams = new URLSearchParams(location.search);
+const useDemoData = searchParams.has('demo') || !hasExtensionApi;
+if (searchParams.has('snapshot')) {
+  document.documentElement.dataset.snapshot = 'true';
+}
+const {
+  remainingOf,
+  formatClock,
+  formatResetTime,
+  formatWeeklyReset,
+  formatUpdatedAt,
+  parseDemoNow,
+  createDemoUsage
+} = FormatUtils;
+const demoNow = parseDemoNow(searchParams.get('demo-now'));
 
 const els = {
   clock: document.getElementById('clock'),
@@ -30,6 +44,7 @@ const els = {
 
 let latestUsage = null;
 let latestError = null;
+let visibleRefreshTimer = null;
 
 function buildSegments() {
   const fragment = document.createDocumentFragment();
@@ -89,7 +104,10 @@ function render(usage, error = null) {
   const secondary = CodexUsage.weeklyWindow(usage);
   const primaryRemaining = remainingOf(primary);
   const secondaryRemaining = secondary ? remainingOf(secondary) : null;
-  const stale = CodexUsage.isUsageStale(usage);
+  const stale = CodexUsage.isUsageStale(
+    usage,
+    useDemoData && demoNow ? demoNow : Date.now()
+  );
   const blocked = usage.limitReached ||
     usage.overageLimitReached ||
     usage.spendLimitReached ||
@@ -124,7 +142,11 @@ function render(usage, error = null) {
     els.creditsValue.textContent = '—';
   }
 
-  els.lastUpdate.textContent = formatUpdatedAt(usage.ts, '等待首次同步');
+  els.lastUpdate.textContent = formatUpdatedAt(
+    usage.ts,
+    '等待首次同步',
+    useDemoData && demoNow ? demoNow : undefined
+  );
 
   if (blocked) {
     setSyncState('error', '额度已用尽');
@@ -141,7 +163,7 @@ function render(usage, error = null) {
 
 async function refresh() {
   if (useDemoData) {
-    render(createDemoUsage());
+    render(createDemoUsage(demoNow));
     return;
   }
 
@@ -166,8 +188,23 @@ async function refresh() {
   }
 }
 
+function stopVisibleRefresh() {
+  if (!visibleRefreshTimer) return;
+  clearInterval(visibleRefreshTimer);
+  visibleRefreshTimer = null;
+}
+
+function startVisibleRefresh() {
+  if (useDemoData || document.hidden || visibleRefreshTimer) return;
+  visibleRefreshTimer = setInterval(() => {
+    if (!document.hidden) void refresh();
+  }, VISIBLE_REFRESH_MS);
+}
+
 function tick() {
-  els.clock.textContent = formatClock();
+  els.clock.textContent = formatClock(
+    useDemoData && demoNow ? new Date(demoNow) : undefined
+  );
   if (latestUsage) {
     const primaryResetTime = formatResetTime(CodexUsage.currentWindow(latestUsage)?.resetAt);
     els.primaryReset.textContent = primaryResetTime;
@@ -176,7 +213,11 @@ function tick() {
     els.weeklyReset.textContent = weekly
       ? formatWeeklyReset(weekly.resetAt)
       : '未提供周额度';
-    els.lastUpdate.textContent = formatUpdatedAt(latestUsage.ts, '等待首次同步');
+    els.lastUpdate.textContent = formatUpdatedAt(
+      latestUsage.ts,
+      '等待首次同步',
+      useDemoData && demoNow ? demoNow : undefined
+    );
   }
 }
 
@@ -186,13 +227,14 @@ async function init() {
   setInterval(tick, 1000);
 
   if (useDemoData) {
-    render(createDemoUsage());
+    render(createDemoUsage(demoNow));
     return;
   }
 
   const data = await chrome.storage.local.get(['codexUsage', 'codexUsageError']);
   render(data.codexUsage ?? null, data.codexUsageError ?? null);
-  refresh();
+  void refresh();
+  startVisibleRefresh();
 
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.codexUsage) latestUsage = changes.codexUsage.newValue ?? null;
@@ -211,7 +253,13 @@ els.openAnalyticsBtn.addEventListener('click', () => {
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && !useDemoData) refresh();
+  if (useDemoData) return;
+  if (document.hidden) {
+    stopVisibleRefresh();
+    return;
+  }
+  void refresh();
+  startVisibleRefresh();
 });
 
 /* ---------- fullscreen toggle ---------- */

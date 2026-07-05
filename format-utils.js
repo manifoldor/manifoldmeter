@@ -77,9 +77,9 @@
   /**
    * Relative time string.  `fallback` is shown when timestamp is missing.
    */
-  function formatUpdatedAt(timestamp, fallback) {
+  function formatUpdatedAt(timestamp, fallback, now = Date.now()) {
     if (!timestamp) return fallback || '等待同步';
-    const seconds = Math.max(0, Math.round((Date.now() - Number(timestamp)) / 1000));
+    const seconds = Math.max(0, Math.round((Number(now) - Number(timestamp)) / 1000));
     if (seconds < 20) return '刚刚更新';
     if (seconds < 60) return `${seconds} 秒前`;
     const minutes = Math.floor(seconds / 60);
@@ -89,8 +89,16 @@
 
   /* ---- demo data ---- */
 
-  function createDemoUsage() {
-    const now = Date.now();
+  function parseDemoNow(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) return numeric;
+    const parsed = Date.parse(String(value));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function createDemoUsage(fixedNow = null) {
+    const now = parseDemoNow(fixedNow) ?? Date.now();
     const weeklyReset = new Date(now);
     weeklyReset.setDate(weeklyReset.getDate() + 7);
     weeklyReset.setHours(9, 0, 0, 0);
@@ -125,6 +133,7 @@
     formatResetTime,
     formatWeeklyReset,
     formatUpdatedAt,
+    parseDemoNow,
     createDemoUsage
   });
 })(typeof globalThis !== 'undefined' ? globalThis : self);

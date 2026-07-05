@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Manifold Meter",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "minimum_chrome_version": "102",
   "author": "linyishan (linyishan@gmail.com)",
   "description": "在 Chrome 工具栏和副屏仪表盘中显示 Codex 当前窗口、每周额度、重置时间与 Credits。",

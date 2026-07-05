@@ -4,7 +4,7 @@
   --rail: #1b1916;
   --text: #bdb9af;
   --text-strong: #c7c3b8;
-  --muted: #77736b;
+  --muted: #89847b;
   --faint: #38342f;
   --track: #302d28;
   --moss: #81927a;
@@ -400,6 +400,10 @@ button {
   height: 100%;
   background: var(--moss);
   transition: width 500ms ease;
+}
+
+html[data-snapshot="true"] .linear-progress span {
+  transition: none;
 }
 
 .meta-row {

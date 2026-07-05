@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
-  <main class="dashboard" aria-live="polite">
+  <main class="dashboard">
     <aside class="rail">
       <div>
         <img class="brand-logo" src="icons/logo.svg" alt="" width="48" height="48" />
@@ -19,7 +19,13 @@
       </div>
 
       <div class="status-row">
-        <p id="sync-state" class="sync-state">
+        <p
+          id="sync-state"
+          class="sync-state"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span class="status-dot" aria-hidden="true"></span>
           <span id="sync-label">正在读取</span>
         </p>
@@ -109,7 +115,7 @@
         </footer>
       </section>
 
-      <section id="notice" class="notice" hidden>
+      <section id="notice" class="notice" role="alert" aria-atomic="true" hidden>
         <div>
           <strong id="notice-title">暂时无法更新</strong>
           <p id="notice-copy">请确认 Chrome 已登录 ChatGPT。</p>

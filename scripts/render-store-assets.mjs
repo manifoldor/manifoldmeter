@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 const assets = resolve(root, 'store/assets');
+const FIXED_DEMO_NOW = '2026-07-05T09:00:00+08:00';
 
 const chromeCandidates = [
   process.env.CHROME_PATH,
@@ -36,7 +37,11 @@ await mkdir(assets, { recursive: true });
 
 async function screenshot(source, output, width, height) {
   const url = pathToFileURL(resolve(root, source));
-  if (source === 'dashboard.html') url.searchParams.set('demo', '1');
+  if (source === 'dashboard.html') {
+    url.searchParams.set('demo', '1');
+    url.searchParams.set('demo-now', FIXED_DEMO_NOW);
+    url.searchParams.set('snapshot', '1');
+  }
 
   const args = [
     '--headless=new',

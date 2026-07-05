@@ -2,9 +2,9 @@
 
 ## 当前发布版本
 
-- 扩展版本：2.0.2
-- 安装包：`../dist/manifold-meter-v2.0.2.zip`
-- 截图状态：已于 2026 年 7 月 4 日从当前界面重新生成并校验尺寸
+- 扩展版本：2.0.3
+- 安装包：`../dist/manifold-meter-v2.0.3.zip`
+- 截图状态：已于 2026 年 7 月 5 日从当前界面重新生成并校验尺寸与可复现性
 
 ## 文件对应关系
 
@@ -19,7 +19,8 @@
 | 商店文案 | `LISTING_zh-CN.md` |
 | 隐私表单填写稿 | `PRIVACY_FORM_zh-CN.md` |
 | 发布检查表 | `RELEASE_CHECKLIST.md` |
-| 2.0.2 更新说明 | `RELEASE_NOTES_2.0.2.md` |
+| 2.0.3 更新说明 | `RELEASE_NOTES_2.0.3.md` |
+| 2.0.2 历史更新说明 | `RELEASE_NOTES_2.0.2.md` |
 
 截图与宣传图均由项目中的真实 HTML/CSS 和演示数据渲染，不包含真实账户数据。
 

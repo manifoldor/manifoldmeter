@@ -3,7 +3,15 @@ const hasExtensionApi = typeof chrome !== 'undefined' &&
   chrome.storage?.local &&
   chrome.runtime?.sendMessage;
 
-const { remainingOf, formatResetTime, formatWeeklyReset, formatUpdatedAt, createDemoUsage } = FormatUtils;
+const {
+  remainingOf,
+  formatResetTime,
+  formatWeeklyReset,
+  formatUpdatedAt,
+  parseDemoNow,
+  createDemoUsage
+} = FormatUtils;
+const demoNow = parseDemoNow(new URLSearchParams(location.search).get('demo-now'));
 
 const elements = {
   dataSection: document.getElementById('data-section'),
@@ -97,13 +105,20 @@ function render(usage, error = null) {
     elements.creditsValue.textContent = '—';
   }
 
-  elements.lastUpdate.textContent = formatUpdatedAt(usage.ts, '等待同步');
+  elements.lastUpdate.textContent = formatUpdatedAt(
+    usage.ts,
+    '等待同步',
+    !hasExtensionApi && demoNow ? demoNow : undefined
+  );
 
   const blocked = usage.limitReached ||
     usage.overageLimitReached ||
     usage.spendLimitReached ||
     usage.allowed === false;
-  const stale = CodexUsage.isUsageStale(usage);
+  const stale = CodexUsage.isUsageStale(
+    usage,
+    !hasExtensionApi && demoNow ? demoNow : Date.now()
+  );
 
   if (blocked) {
     elements.statusRow.dataset.state = 'error';
@@ -122,7 +137,7 @@ function render(usage, error = null) {
 
 async function refresh() {
   if (!hasExtensionApi) {
-    render(createDemoUsage());
+    render(createDemoUsage(demoNow));
     return;
   }
 
@@ -184,7 +199,7 @@ if (hasExtensionApi) {
     else renderEmpty(latestError);
   });
 } else {
-  render(createDemoUsage());
+  render(createDemoUsage(demoNow));
 }
 
 setInterval(() => {

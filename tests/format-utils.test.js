@@ -9,7 +9,9 @@ const {
   remainingOf,
   formatResetTime,
   formatWeeklyReset,
-  formatUpdatedAt
+  formatUpdatedAt,
+  parseDemoNow,
+  createDemoUsage
 } = FormatUtils;
 
 describe('percentage formatting', () => {
@@ -43,13 +45,25 @@ describe('time formatting', () => {
   });
 
   it('formats recent update timestamps', () => {
-    const originalNow = Date.now;
-    Date.now = () => 1_700_000_000_000;
-    try {
-      assert.strictEqual(formatUpdatedAt(Date.now() - 10_000), '刚刚更新');
-      assert.strictEqual(formatUpdatedAt(Date.now() - 90_000), '1 分钟前');
-    } finally {
-      Date.now = originalNow;
-    }
+    const now = 1_700_000_000_000;
+    assert.strictEqual(formatUpdatedAt(now - 10_000, undefined, now), '刚刚更新');
+    assert.strictEqual(formatUpdatedAt(now - 90_000, undefined, now), '1 分钟前');
+  });
+});
+
+describe('fixed demo time', () => {
+  it('parses ISO and numeric demo timestamps', () => {
+    const expected = new Date('2026-07-05T09:00:00+08:00').getTime();
+    assert.strictEqual(parseDemoNow('2026-07-05T09:00:00+08:00'), expected);
+    assert.strictEqual(parseDemoNow(String(expected)), expected);
+    assert.strictEqual(parseDemoNow('invalid'), null);
+  });
+
+  it('creates stable demo reset values from a fixed timestamp', () => {
+    const now = new Date('2026-07-05T09:00:00+08:00').getTime();
+    const usage = createDemoUsage(now);
+    assert.strictEqual(usage.ts, now);
+    assert.strictEqual(usage.primaryWindow.resetAt, now + (2 * 60 + 14) * 60_000);
+    assert.strictEqual(formatWeeklyReset(usage.secondaryWindow.resetAt), '7月12日 重置');
   });
 });

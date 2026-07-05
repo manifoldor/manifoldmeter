@@ -142,6 +142,7 @@ function buildUsageHeaders(accessToken) {
 
 async function requestUsage(accessToken) {
   return fetchWithTimeout(USAGE_URL, {
+    cache: 'no-store',
     credentials: 'include',
     headers: buildUsageHeaders(accessToken)
   });
