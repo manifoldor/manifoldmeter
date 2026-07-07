@@ -2,55 +2,48 @@
 
 > Many models. One meter.
 
-Manifold Meter is a local-first Chrome extension for ambient AI usage monitoring. The current release supports Codex usage from a signed-in ChatGPT session and presents it in two coordinated surfaces:
+Manifold Meter 是一个本地优先的 Chrome 扩展，用来在工具栏和副屏中持续查看 AI 使用量。当前版本支持从已登录的 ChatGPT 会话读取 Codex 用量，并在两个界面中同步展示：
 
-- a compact toolbar popup
-- an always-on dashboard designed for a 1136 × 640 secondary display
+- 紧凑的浏览器工具栏弹窗
+- 为 1136 × 640 横向副屏设计的常驻仪表盘
 
-## Features
+## 功能
 
-- Current 5-hour window and weekly allowance
-- Remaining percentage, current-window reset time, and weekly reset date
-- Optional credit balance
-- Toolbar badge with usage severity
-- Credit balance in both the popup and dashboard when available
-- Automatic refresh every minute while the dashboard is visible, with a
-  coordinated 10-minute background fallback while it is hidden
-- Request timeout, refresh de-duplication, and explicit stale/error states
-- Manual refresh and stale-data states
-- Dedicated low-luminance secondary-display dashboard
-- No Manifold account, telemetry, or remote storage
+- 当前 5 小时窗口和周额度展示
+- 剩余百分比、当前窗口重置时间和周重置日期
+- 可选的 Credits 余额展示
+- 根据用量状态变化的工具栏徽标
+- 当接口返回 Credits 时，在弹窗和仪表盘中同时显示
+- 仪表盘可见时每 1 分钟自动刷新；隐藏时由后台按 10 分钟间隔兜底刷新
+- 请求超时、刷新去重，以及明确的过期/错误状态
+- 支持手动刷新和数据过期提示
+- 专为低亮度副屏设计的常驻仪表盘
+- 不需要 Manifold 账号，不采集遥测，不使用远程存储
 
-## Installation
+## 安装
 
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Click **Load unpacked**.
-4. Select the `manifold-meter` folder.
-5. Open the Codex usage page once while signed in to ChatGPT.
-6. Open the extension popup and choose **打开副屏**.
+1. 在 Chrome 地址栏打开 `chrome://extensions`。
+2. 打开右上角“开发者模式”。
+3. 点击“加载已解压的扩展程序”。
+4. 选择整个 `manifold-meter` 文件夹。
+5. 确保 Chrome 已登录 ChatGPT，并打开一次 Codex 用量页面。
+6. 点击扩展图标，在弹窗中选择“打开副屏”。
 
-## How it works
+## 工作原理
 
-Manifold Meter reads Codex quota metadata from the usage endpoint used by ChatGPT, authenticated through the browser session that already exists on `chatgpt.com`.
+Manifold Meter 通过当前浏览器中已经登录的 `chatgpt.com` 会话，读取 ChatGPT 使用的 Codex 用量接口返回的额度元数据。
 
-The extension stores normalized quota metadata in `chrome.storage.local`. A
-short-lived access token may be held only in Chrome's in-memory
-`storage.session`; it is cleared when the browser restarts or the extension is
-reloaded. Email addresses, account IDs, cookies, session tokens, and chat
-content are not stored.
+扩展会把标准化后的额度快照保存在 `chrome.storage.local`。短期访问令牌只会临时保存在 Chrome 的内存会话存储 `storage.session` 中；浏览器重启或扩展重新加载后会被清除。扩展不会保存邮箱、账户 ID、Cookie、会话令牌或聊天内容。
 
-| Permission | Purpose |
+| 权限 | 用途 |
 |---|---|
-| `storage` | Store quota snapshots and refresh state locally |
-| `alarms` | Refresh quota data periodically |
-| `chatgpt.com` host access | Read Codex quota metadata and session authentication from the signed-in origin |
+| `storage` | 在本地保存额度快照和刷新状态 |
+| `alarms` | 定期刷新额度数据 |
+| `chatgpt.com` 主机权限 | 从已登录来源读取 Codex 额度元数据和会话认证信息 |
 
-Chrome host permissions apply to the entire `https://chatgpt.com` origin even
-when code only calls specific paths. Manifold Meter limits its requests to the
-session endpoints and the Codex usage endpoint listed in `background.js`.
+Chrome 的主机权限会作用于整个 `https://chatgpt.com` 来源，即使代码只访问其中的特定路径。Manifold Meter 会将请求限制在 `background.js` 中列出的会话接口和 Codex 用量接口。
 
-## Development
+## 开发
 
 ```bash
 npm install
@@ -59,21 +52,20 @@ npm run package
 npm run store:assets
 ```
 
-`npm run package` creates a release archive in `dist/` from an explicit file
-allowlist so development files and dependencies are not shipped accidentally.
-`npm run store:assets` regenerates the Chrome Web Store screenshots and
-promotional images from the real local UI and demo data.
+`npm run package` 会根据明确的文件白名单在 `dist/` 中生成发布压缩包，避免把开发文件或依赖意外打包进去。
 
-## Product scope
+`npm run store:assets` 会使用真实本地界面和演示数据，重新生成 Chrome 应用商店截图和宣传图。
 
-The Manifold Meter name is intentionally provider-neutral. Codex is the first supported source; additional AI providers can be added as separate adapters without changing the product identity.
+## 产品范围
 
-## Independence and attribution
+Manifold Meter 这个名字刻意保持服务商中立。Codex 是第一个支持的数据源；未来可以通过独立适配器增加更多 AI 服务商，而不需要改变产品身份。
 
-Manifold Meter is independent software and is not affiliated with or endorsed by OpenAI.
+## 独立性与署名
 
-The original Codex quota-reading implementation was derived from the MIT-licensed Codex Quota Monitor project. The original copyright notice is preserved in [LICENSE](LICENSE).
+Manifold Meter 是独立软件，与 OpenAI 无从属关系，也未获得 OpenAI 背书。
 
-## License
+最初的 Codex 额度读取实现基于 MIT 许可的 Codex Quota Monitor 项目演化而来。原始版权声明已保留在 [LICENSE](LICENSE) 中。
+
+## 许可证
 
 MIT
