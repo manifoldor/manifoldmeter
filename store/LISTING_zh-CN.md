@@ -15,15 +15,17 @@ Manifold Meter
 Manifold Meter 是一个本地优先的 Codex 用量仪表盘。它使用你在 Chrome
 中现有的 ChatGPT 登录状态，读取并显示：
 
-- 当前用量窗口的剩余百分比和具体重置时刻
-- 每周额度、重置日期和进度
+- 当前用量窗口或动态额度状态
+- 可用的剩余百分比、具体重置时刻和周重置日期
 - 工具栏弹窗与副屏中的可选 Credits 余额
+- 可用重置次数和最早过期日期
 - 工具栏剩余额度徽标
 - 适合横向副屏常驻显示的低亮度仪表盘
 - 数据过期、登录失效和同步失败状态
 
-当前窗口以本地时间显示具体重置时刻；每周额度以“X月X日”显示重置日期，
-避免把倒计时和日历日期混在一起。
+如果当前套餐返回窗口额度，扩展会以本地时间显示具体重置时刻；如果返回
+周额度，则以“X月X日”显示重置日期。对于按 Credits 或动态限额计算的
+套餐，界面会显示 Credits/动态限额状态，避免展示错误百分比。
 
 隐私优先：
 
@@ -56,8 +58,8 @@ Manifold Meter 是独立软件，与 OpenAI 无隶属、赞助或认可关系。
 
 ## 审核备注
 
-The extension has one purpose: displaying the signed-in user's Codex quota
-metadata and reset schedule. It does not read chat content or browsing history.
+The extension has one purpose: displaying the signed-in user's Codex usage,
+allowance, credits, and reset metadata. It does not read chat content or browsing history.
 It sends no data to developer-controlled servers. Authentication data is held
 only in Chrome's in-memory session storage. The `chatgpt.com` host permission
 is required because Chrome host permissions are origin-scoped; the extension

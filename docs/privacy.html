@@ -32,7 +32,7 @@
 
     <h3>处理的数据</h3>
     <ul>
-      <li>Codex 用量元数据：当前窗口与每周窗口的已用/剩余比例、重置时间和限额状态。</li>
+      <li>Codex 用量元数据：可用窗口的已用/剩余比例、动态额度、重置时间、可用重置次数和限额状态。</li>
       <li>账户服务元数据：套餐类型、可选的 Credits 余额及相关限额状态。</li>
       <li>认证信息：用于向 chatgpt.com 请求上述数据的短期访问令牌；浏览器也可能向同源请求附加现有 ChatGPT Cookie。</li>
       <li>会话响应可能包含账户属性，但扩展只提取访问令牌，不使用或保存姓名、邮箱、账户 ID 等属性。</li>
@@ -92,7 +92,7 @@
 
     <h3>Data handled</h3>
     <ul>
-      <li>Codex quota metadata, including usage percentages, reset times, and limit status.</li>
+      <li>Codex usage metadata, including available usage percentages, dynamic allowance, reset times, available reset credits, and limit status.</li>
       <li>Service metadata, including plan type and optional service credit balance.</li>
       <li>A short-lived access token used to request this data from chatgpt.com.</li>
       <li>Session responses may contain account attributes; the extension extracts only the access token and does not use or store names, email addresses, or account IDs.</li>

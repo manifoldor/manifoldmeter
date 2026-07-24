@@ -12,8 +12,10 @@ const ALARM = 'codex-usage-poll';
 const POLL_MINUTES = 10;
 const FETCH_TIMEOUT_MS = 15_000;
 const USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
+const RESET_CREDITS_URL = 'https://chatgpt.com/backend-api/wham/rate-limit-reset-credits';
 const ACCESS_TOKEN_KEY = 'codexAccessToken';
 const ACCESS_TOKEN_EXP_KEY = 'codexAccessTokenExpiresAt';
+const ACCOUNT_ID_KEY = 'codexAccountId';
 const ACCESS_TOKEN_REFRESH_SKEW_MS = 2 * 60 * 1000;
 const CONTENT_AUTHORITY_MS = 2 * 60 * 1000;
 const AUTH_SESSION_URLS = [
@@ -23,6 +25,7 @@ const AUTH_SESSION_URLS = [
 
 let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
+let cachedAccountId = null;
 let fetchInFlight = null;
 const { normalizeUsage, weeklyWindow } = CodexUsage;
 
@@ -69,10 +72,22 @@ async function cacheAccessToken(token) {
   return true;
 }
 
+function isValidAccountId(accountId) {
+  return typeof accountId === 'string' && accountId.length >= 3 && accountId.length <= 512;
+}
+
+async function cacheAccountId(accountId) {
+  if (!isValidAccountId(accountId)) return false;
+  cachedAccountId = accountId;
+  await chrome.storage.session?.set?.({ [ACCOUNT_ID_KEY]: accountId });
+  return true;
+}
+
 async function clearAccessToken() {
   cachedAccessToken = null;
   cachedAccessTokenExpiresAt = 0;
-  await chrome.storage.session?.remove?.([ACCESS_TOKEN_KEY, ACCESS_TOKEN_EXP_KEY]);
+  cachedAccountId = null;
+  await chrome.storage.session?.remove?.([ACCESS_TOKEN_KEY, ACCESS_TOKEN_EXP_KEY, ACCOUNT_ID_KEY]);
 }
 
 function extractAccessToken(data) {
@@ -81,6 +96,18 @@ function extractAccessToken(data) {
     data?.session?.accessToken ||
     data?.session?.access_token ||
     data?.token ||
+    null;
+}
+
+function extractAccountId(data) {
+  return data?.account_id ||
+    data?.accountId ||
+    data?.session?.account_id ||
+    data?.session?.accountId ||
+    data?.session?.account?.id ||
+    data?.account?.id ||
+    data?.user?.account_id ||
+    data?.user?.accountId ||
     null;
 }
 
@@ -105,6 +132,7 @@ async function refreshAccessTokenFromSession() {
 
       const data = await res.json();
       const token = extractAccessToken(data);
+      await cacheAccountId(extractAccountId(data));
       if (await cacheAccessToken(token)) return token;
     } catch {
       // Try the next known session endpoint.
@@ -118,8 +146,13 @@ async function getAccessToken() {
   if (isTokenUsable(cachedAccessToken, cachedAccessTokenExpiresAt)) return cachedAccessToken;
 
   try {
-    const data = await chrome.storage.session?.get?.([ACCESS_TOKEN_KEY, ACCESS_TOKEN_EXP_KEY]);
+    const data = await chrome.storage.session?.get?.([
+      ACCESS_TOKEN_KEY,
+      ACCESS_TOKEN_EXP_KEY,
+      ACCOUNT_ID_KEY
+    ]);
     cachedAccessToken = data?.[ACCESS_TOKEN_KEY] || null;
+    cachedAccountId = data?.[ACCOUNT_ID_KEY] || null;
     cachedAccessTokenExpiresAt = Number(data?.[ACCESS_TOKEN_EXP_KEY]) ||
       decodeAccessTokenExpiresAt(cachedAccessToken || '');
     if (isTokenUsable(cachedAccessToken, cachedAccessTokenExpiresAt)) return cachedAccessToken;
@@ -131,13 +164,22 @@ async function getAccessToken() {
   return refreshAccessTokenFromSession();
 }
 
-function buildUsageHeaders(accessToken) {
+function buildUsageHeaders(accessToken, accountId = cachedAccountId) {
   const headers = {
     accept: 'application/json',
     'oai-language': chrome.i18n.getUILanguage?.() || 'en-US'
   };
   if (accessToken) headers.authorization = `Bearer ${accessToken}`;
+  if (accountId) headers['ChatGPT-Account-ID'] = accountId;
   return headers;
+}
+
+function buildResetCreditsHeaders(accessToken, accountId = cachedAccountId) {
+  return {
+    ...buildUsageHeaders(accessToken, accountId),
+    'OpenAI-Beta': 'codex-1',
+    originator: 'Codex Desktop'
+  };
 }
 
 async function requestUsage(accessToken) {
@@ -146,6 +188,30 @@ async function requestUsage(accessToken) {
     credentials: 'include',
     headers: buildUsageHeaders(accessToken)
   });
+}
+
+async function requestResetCredits(accessToken) {
+  return fetchWithTimeout(RESET_CREDITS_URL, {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: buildResetCreditsHeaders(accessToken)
+  });
+}
+
+async function readResetCredits(accessToken) {
+  try {
+    const res = await requestResetCredits(accessToken);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function mergeResetCredits(data, accessToken) {
+  if (data?.rateLimitResetCredits || data?.rate_limit_reset_credits) return data;
+  const resetCredits = await readResetCredits(accessToken);
+  return resetCredits ? { ...data, rate_limit_reset_credits: resetCredits } : data;
 }
 
 async function shouldUseRecentContentSnapshot(force) {
@@ -185,7 +251,7 @@ async function runFetchUsage({ force = false } = {}) {
       return { ok: false, status: res.status, source };
     }
 
-    const data = await res.json();
+    const data = await mergeResetCredits(await res.json(), currentAccessToken);
     const codexUsage = normalizeUsage(data, { source: 'background' });
     if (!codexUsage) {
       await storeUsageError('invalid-response', 'background');
@@ -243,8 +309,14 @@ function remainingPercent(windowData) {
 
 function buildTitle(usage) {
   const primaryRemaining = remainingPercent(usage?.primaryWindow || usage);
-  if (primaryRemaining === null) return 'Manifold Meter';
-  const sessionSummary = `当前窗口剩余: ${primaryRemaining}%`;
+  if (primaryRemaining === null) {
+    if (usage?.creditsUnlimited) return 'Credits: 不限量';
+    if (usage?.creditsBalance !== null && usage?.creditsBalance !== undefined) {
+      return `Credits: ${usage.creditsBalance}`;
+    }
+    return 'Manifold Meter';
+  }
+  const sessionSummary = `当前用量剩余: ${primaryRemaining}%`;
   const weeklyRemaining = remainingPercent(weeklyWindow(usage));
 
   if (weeklyRemaining === null) return sessionSummary;
@@ -282,7 +354,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: false, status: 'forbidden' });
       return false;
     }
-    cacheAccessToken(msg.accessToken).then((ok) => sendResponse({ ok }));
+    Promise.all([
+      cacheAccessToken(msg.accessToken),
+      cacheAccountId(msg.accountId)
+    ]).then(([tokenOk]) => sendResponse({ ok: tokenOk }));
     return true;
   }
 

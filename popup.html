@@ -21,16 +21,16 @@
     <section id="data-section" class="metrics" hidden>
       <p id="plan" class="plan-label">CODEX</p>
       <div class="metric-block">
-        <p class="metric-title">当前</p>
+        <p id="primary-title" class="metric-title">当前</p>
         <div class="metric-row">
-          <p class="metric-value"><strong id="primary-value">—</strong><span>% 剩余</span></p>
+          <p class="metric-value"><strong id="primary-value">—</strong><span id="primary-unit">% 剩余</span></p>
           <span id="primary-reset" class="metric-reset">—</span>
         </div>
         <div
           id="primary-track"
           class="track"
           role="progressbar"
-          aria-label="当前窗口剩余额度"
+          aria-label="当前用量剩余额度"
           aria-valuemin="0"
           aria-valuemax="100"
         >
@@ -56,9 +56,25 @@
         </div>
       </div>
 
-      <div class="credits-row">
-        <span>Credits</span>
-        <strong id="credits-value">—</strong>
+      <div class="account-row">
+        <div class="credits-row">
+          <span>Credits</span>
+          <strong id="credits-value">—</strong>
+        </div>
+        <section class="reset-credits" aria-labelledby="reset-credits-title" hidden>
+          <span id="reset-credits-title" class="reset-credits-title">RESETS</span>
+          <div class="reset-credits-row">
+            <strong id="reset-credits-value">—</strong>
+            <div
+              id="reset-credits-dots"
+              class="reset-credits-dots"
+              role="meter"
+              aria-label="可用重置次数"
+              aria-valuemin="0"
+              aria-valuemax="1"
+            ></div>
+          </div>
+        </section>
       </div>
 
       <footer class="status-row">

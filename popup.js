@@ -11,7 +11,21 @@ const {
   parseDemoNow,
   createDemoUsage
 } = FormatUtils;
-const demoNow = parseDemoNow(new URLSearchParams(location.search).get('demo-now'));
+const searchParams = new URLSearchParams(location.search);
+const demoNow = parseDemoNow(searchParams.get('demo-now'));
+
+function createSurfaceDemoUsage() {
+  const usage = createDemoUsage(demoNow);
+  if (!searchParams.has('weekly-only') && !location.href.includes('weekly-only')) return usage;
+  usage.primaryWindow = null;
+  usage.usedPercent = undefined;
+  usage.remainingPercent = undefined;
+  usage.resetAt = undefined;
+  usage.limitWindowSeconds = undefined;
+  usage.windowLabel = undefined;
+  usage.windows = [usage.secondaryWindow].filter(Boolean);
+  return usage;
+}
 
 const elements = {
   dataSection: document.getElementById('data-section'),
@@ -19,7 +33,10 @@ const elements = {
   emptyTitle: document.getElementById('empty-title'),
   emptyCopy: document.getElementById('empty-copy'),
   plan: document.getElementById('plan'),
+  primaryMetric: document.querySelector('.metric-block'),
+  primaryTitle: document.getElementById('primary-title'),
   primaryValue: document.getElementById('primary-value'),
+  primaryUnit: document.getElementById('primary-unit'),
   primaryReset: document.getElementById('primary-reset'),
   primaryTrack: document.getElementById('primary-track'),
   primaryProgress: document.getElementById('primary-progress'),
@@ -28,6 +45,9 @@ const elements = {
   weeklyTrack: document.getElementById('weekly-track'),
   weeklyProgress: document.getElementById('weekly-progress'),
   creditsValue: document.getElementById('credits-value'),
+  resetCredits: document.querySelector('.reset-credits'),
+  resetCreditsValue: document.getElementById('reset-credits-value'),
+  resetCreditsDots: document.getElementById('reset-credits-dots'),
   statusRow: document.querySelector('.status-row'),
   syncLabel: document.getElementById('sync-label'),
   lastUpdate: document.getElementById('last-update'),
@@ -39,9 +59,23 @@ const elements = {
 let latestUsage = null;
 let latestError = null;
 
+function setResetCreditDots(count) {
+  elements.resetCreditsDots.replaceChildren();
+  const visibleCount = Number.isFinite(count) ? Math.max(0, Math.round(count)) : 0;
+  const fragment = document.createDocumentFragment();
+  for (let index = 0; index < visibleCount; index += 1) {
+    const dot = document.createElement('span');
+    dot.className = 'reset-credit-dot is-filled';
+    dot.setAttribute('aria-hidden', 'true');
+    fragment.appendChild(dot);
+  }
+  elements.resetCreditsDots.appendChild(fragment);
+}
+
 function setProgress(track, bar, percent) {
-  bar.style.width = `${percent}%`;
-  track.setAttribute('aria-valuenow', String(percent));
+  const normalizedPercent = Number.isFinite(Number(percent)) ? Number(percent) : 0;
+  bar.style.width = `${normalizedPercent}%`;
+  track.setAttribute('aria-valuenow', String(normalizedPercent));
 }
 
 function renderEmpty(error = null) {
@@ -61,6 +95,74 @@ function renderEmpty(error = null) {
   }
 }
 
+function describeWindow(windowData, fallback = '当前') {
+  const seconds = Number(windowData?.limitWindowSeconds);
+  if (seconds === 18000) return '5小时';
+  if (seconds === 604800) return '本周';
+  if (Number.isFinite(seconds) && seconds > 0) {
+    if (seconds % 86400 === 0) return `${seconds / 86400}天`;
+    if (seconds % 3600 === 0) return `${seconds / 3600}小时`;
+  }
+  return fallback;
+}
+
+function setPrimaryMetric(primary, usage) {
+  const primaryRemaining = primary ? remainingOf(primary) : null;
+  const hasPrimaryPercent = primaryRemaining !== null && primaryRemaining !== undefined;
+  elements.primaryTitle.textContent = primary ? describeWindow(primary) : '当前用量';
+  elements.primaryValue.textContent = hasPrimaryPercent ? String(primaryRemaining) : '—';
+  if (hasPrimaryPercent) {
+    elements.primaryUnit.textContent = '% 剩余';
+  } else if (usage.mode === 'credits') {
+    elements.primaryUnit.textContent = '按 Credits';
+  } else {
+    elements.primaryUnit.textContent = '动态限额';
+  }
+
+  const primaryResetTime = formatResetTime(primary?.resetAt);
+  if (!primary) {
+    elements.primaryReset.textContent = '未提供窗口额度';
+  } else if (primaryResetTime === '--:--') {
+    elements.primaryReset.textContent = '重置时间未知';
+  } else {
+    elements.primaryReset.textContent = `${primaryResetTime} 重置`;
+  }
+  setProgress(elements.primaryTrack, elements.primaryProgress, hasPrimaryPercent ? primaryRemaining : 0);
+  elements.primaryTrack.setAttribute(
+    'aria-valuetext',
+    hasPrimaryPercent ? `剩余 ${primaryRemaining}%` : '未提供百分比额度'
+  );
+}
+
+function renderResetCredits(resetCredits) {
+  const count = Number(resetCredits?.availableCount);
+  const rawCount = Number(resetCredits?.rawAvailableCount);
+  const hasCount = Number.isFinite(count);
+  const displayCount = hasCount ? Math.min(10, Math.max(0, Math.round(count))) : 0;
+  const overflow = Number.isFinite(rawCount) && rawCount > 10;
+  elements.resetCredits.hidden = !hasCount;
+  if (!hasCount) {
+    elements.resetCreditsValue.textContent = '';
+    setResetCreditDots(0);
+    elements.resetCreditsDots.setAttribute('aria-valuenow', '0');
+    elements.resetCreditsDots.setAttribute('aria-valuemax', '1');
+    elements.resetCreditsDots.setAttribute('aria-valuetext', '');
+    return;
+  }
+
+  elements.resetCredits.dataset.level = hasCount && displayCount > 0 && displayCount <= 3
+    ? 'low'
+    : 'normal';
+  elements.resetCreditsValue.textContent = overflow ? '10+次' : `${displayCount}次`;
+  setResetCreditDots(displayCount);
+  elements.resetCreditsDots.setAttribute('aria-valuenow', String(displayCount));
+  elements.resetCreditsDots.setAttribute('aria-valuemax', String(Math.max(displayCount, 1)));
+  elements.resetCreditsDots.setAttribute(
+    'aria-valuetext',
+    `可用重置次数 ${displayCount} 次`
+  );
+}
+
 function render(usage, error = null) {
   if (!usage) {
     renderEmpty();
@@ -74,17 +176,14 @@ function render(usage, error = null) {
 
   const primary = CodexUsage.currentWindow(usage);
   const weekly = CodexUsage.weeklyWindow(usage);
-  const primaryRemaining = remainingOf(primary);
   const weeklyRemaining = weekly ? remainingOf(weekly) : null;
   const planName = usage.plan ? String(usage.plan).toUpperCase() : 'CHATGPT';
 
   elements.plan.textContent = `CODEX · ${planName}`;
-  elements.primaryValue.textContent = String(primaryRemaining);
-  const primaryResetTime = formatResetTime(primary?.resetAt);
-  elements.primaryReset.textContent = primaryResetTime === '--:--'
-    ? '重置时间未知'
-    : `${primaryResetTime} 重置`;
-  setProgress(elements.primaryTrack, elements.primaryProgress, primaryRemaining);
+  renderResetCredits(usage.resetCredits);
+  elements.dataSection.classList.toggle('is-weekly-only', !primary && Boolean(weekly));
+  elements.primaryMetric.hidden = !primary;
+  if (primary) setPrimaryMetric(primary, usage);
 
   elements.weeklyValue.textContent = weeklyRemaining === null ? '—' : String(weeklyRemaining);
   elements.weeklyReset.textContent = weekly
@@ -199,7 +298,7 @@ if (hasExtensionApi) {
     else renderEmpty(latestError);
   });
 } else {
-  render(createDemoUsage(demoNow));
+  render(createSurfaceDemoUsage());
 }
 
 setInterval(() => {

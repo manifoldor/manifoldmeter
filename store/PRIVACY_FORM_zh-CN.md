@@ -4,8 +4,9 @@
 
 ## 单一用途
 
-向已登录 ChatGPT 的用户显示 Codex 当前窗口和每周额度、重置时间、可选
-Credits 余额及同步状态，并在 Chrome 工具栏显示当前窗口的剩余百分比。
+向已登录 ChatGPT 的用户显示 Codex 当前用量、动态额度、重置时间、可选
+Credits 余额、可用重置次数及同步状态；当接口提供百分比窗口时，在 Chrome
+工具栏显示剩余百分比。
 
 ## 权限理由
 
@@ -21,7 +22,7 @@ Credits 余额及同步状态，并在 Chrome 工具栏显示当前窗口的剩�
 ### `https://chatgpt.com/*`
 
 从用户已登录的 ChatGPT 会话端点取得短期认证信息，并从 Codex 用量端点读取
-额度元数据。Chrome 的主机权限按整个来源授权，但扩展代码只请求
+用量和额度元数据。Chrome 的主机权限按整个来源授权，但扩展代码只请求
 `/api/auth/session`、`/backend-api/auth/session` 和
 `/backend-api/wham/usage`。
 
@@ -57,6 +58,6 @@ Limited Use 声明：
 
 ## 显著披露文案
 
-> Manifold Meter 使用你当前的 ChatGPT 登录状态读取 Codex 用量和可选
-> Credits 余额。额度快照只保存在本机；短期访问令牌只保存在 Chrome
+> Manifold Meter 使用你当前的 ChatGPT 登录状态读取 Codex 用量、动态额度
+> 和可选 Credits 余额。额度快照只保存在本机；短期访问令牌只保存在 Chrome
 > 的内存会话中。数据不会发送到开发者服务器，也不会用于广告或销售。

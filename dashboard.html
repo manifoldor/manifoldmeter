@@ -18,6 +18,7 @@
         <p class="product-name">METER</p>
       </div>
 
+      <p id="last-update" class="last-update">等待首次同步</p>
       <div class="status-row">
         <p
           id="sync-state"
@@ -69,7 +70,7 @@
               id="primary-progress"
               class="segmented-progress"
               role="progressbar"
-              aria-label="当前窗口剩余额度"
+              aria-label="当前用量剩余额度"
               aria-valuemin="0"
               aria-valuemax="100"
             ></div>
@@ -111,7 +112,20 @@
             <span>Credits</span>
             <strong id="credits-value">—</strong>
           </p>
-          <p id="last-update" class="last-update">等待首次同步</p>
+          <section class="reset-credits" aria-labelledby="reset-credits-title" hidden>
+            <p id="reset-credits-title" class="reset-credits-title">Resets</p>
+            <div class="reset-credits-meter">
+              <strong id="reset-credits-value">—</strong>
+              <div
+                id="reset-credits-dots"
+                class="reset-credits-dots"
+                role="meter"
+                aria-label="可用重置次数"
+                aria-valuemin="0"
+                aria-valuemax="1"
+              ></div>
+            </div>
+          </section>
         </footer>
       </section>
 

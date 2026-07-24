@@ -121,6 +121,13 @@
       plan: 'plus',
       allowed: true,
       creditsBalance: 1240,
+      resetCredits: {
+        availableCount: 3,
+        rawAvailableCount: 3,
+        maxDisplayCount: 10,
+        credits: [],
+        source: 'demo'
+      },
       ts: now
     };
   }

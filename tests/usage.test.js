@@ -80,6 +80,112 @@ describe('normalizeUsage', () => {
     assert.strictEqual(result.hasCredits, false);
   });
 
+  it('accepts credits-only payloads without a rate limit window', () => {
+    const payload = {
+      plan_type: 'plus',
+      credits: {
+        balance: 123.45,
+        has_credits: true
+      }
+    };
+    const result = normalizeUsage(payload, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.mode, 'credits');
+    assert.strictEqual(result.primaryWindow, null);
+    assert.strictEqual(result.creditsBalance, 123.45);
+    assert.strictEqual(currentWindow(result), null);
+  });
+
+  it('accepts dynamic window arrays from newer quota shapes', () => {
+    const payload = {
+      plan: 'business',
+      limits: [
+        {
+          used_percent: 20,
+          remaining_percent: 80,
+          window_seconds: 86400,
+          reset_after_seconds: 3600
+        }
+      ]
+    };
+    const now = 1_700_000_000_000;
+    const result = normalizeUsage(payload, { now });
+    assert.ok(result);
+    assert.strictEqual(result.mode, 'windowed');
+    assert.strictEqual(result.windows.length, 1);
+    assert.strictEqual(result.windows[0].remainingPercent, 80);
+    assert.strictEqual(result.windows[0].limitWindowSeconds, 86400);
+    assert.strictEqual(currentWindow(result), result.windows[0]);
+  });
+
+  it('keeps blocked status even when percentage windows are unavailable', () => {
+    const payload = {
+      rate_limit: {
+        allowed: false,
+        limit_reached: true
+      },
+      spend_control: { reached: true }
+    };
+    const result = normalizeUsage(payload, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.mode, 'unknown');
+    assert.strictEqual(result.allowed, false);
+    assert.strictEqual(result.limitReached, true);
+    assert.strictEqual(result.spendLimitReached, true);
+  });
+
+  it('normalizes available reset credits', () => {
+    const payload = {
+      rateLimitResetCredits: {
+        availableCount: 3,
+        credits: [
+          { id: 'later', status: 'available' },
+          { id: 'earlier', status: 'available' }
+        ]
+      }
+    };
+    const result = normalizeUsage(payload, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.resetCredits.availableCount, 3);
+    assert.strictEqual(result.resetCredits.rawAvailableCount, 3);
+    assert.strictEqual(result.resetCredits.maxDisplayCount, 10);
+  });
+
+  it('normalizes app-server result reset credit shape', () => {
+    const payload = {
+      result: {
+        rateLimitResetCredits: {
+          availableCount: 1,
+          credits: [
+            { id: 'credit-1', status: 'available' }
+          ]
+        }
+      }
+    };
+    const result = normalizeUsage(payload, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.resetCredits.availableCount, 1);
+  });
+
+  it('normalizes alternate banked reset count fields', () => {
+    const result = normalizeUsage({ available_resets: 1 }, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.resetCredits.availableCount, 1);
+    assert.strictEqual(result.resetCredits.rawAvailableCount, 1);
+  });
+
+  it('clamps reset credit display count while preserving the raw count', () => {
+    const payload = {
+      rate_limit_reset_credits: {
+        available_count: 12
+      }
+    };
+    const result = normalizeUsage(payload, { now: Date.now() });
+    assert.ok(result);
+    assert.strictEqual(result.resetCredits.availableCount, 10);
+    assert.strictEqual(result.resetCredits.rawAvailableCount, 12);
+  });
+
   it('detects limit_reached and overage flags', () => {
     const payload = {
       rate_limit: {
@@ -178,6 +284,32 @@ describe('currentWindow', () => {
     };
     const w = currentWindow(usage);
     assert.strictEqual(w.usedPercent, 30);
+  });
+
+  it('does not use a weekly window as the current window', () => {
+    const usage = {
+      primaryWindow: {
+        usedPercent: 27,
+        remainingPercent: 73,
+        limitWindowSeconds: 604800
+      }
+    };
+    assert.strictEqual(currentWindow(usage), null);
+  });
+
+  it('falls back to the first non-weekly dynamic window', () => {
+    const current = {
+      usedPercent: 42,
+      remainingPercent: 58,
+      limitWindowSeconds: 86400
+    };
+    const usage = {
+      windows: [
+        { usedPercent: 27, remainingPercent: 73, limitWindowSeconds: 604800 },
+        current
+      ]
+    };
+    assert.strictEqual(currentWindow(usage), current);
   });
 
   it('falls back to top-level fields for legacy data', () => {
