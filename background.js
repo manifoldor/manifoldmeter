@@ -16,6 +16,8 @@ const RESET_CREDITS_URL = 'https://chatgpt.com/backend-api/wham/rate-limit-reset
 const ACCESS_TOKEN_KEY = 'codexAccessToken';
 const ACCESS_TOKEN_EXP_KEY = 'codexAccessTokenExpiresAt';
 const ACCOUNT_ID_KEY = 'codexAccountId';
+const USER_DATA_CONSENT_KEY = 'codexUserDataConsent';
+const USER_DATA_CONSENT_VERSION = '2026-08-01';
 const ACCESS_TOKEN_REFRESH_SKEW_MS = 2 * 60 * 1000;
 const CONTENT_AUTHORITY_MS = 2 * 60 * 1000;
 const AUTH_SESSION_URLS = [
@@ -28,6 +30,11 @@ let cachedAccessTokenExpiresAt = 0;
 let cachedAccountId = null;
 let fetchInFlight = null;
 const { normalizeUsage, weeklyWindow } = CodexUsage;
+
+async function hasUserDataConsent() {
+  const data = await chrome.storage.local.get(USER_DATA_CONSENT_KEY);
+  return data[USER_DATA_CONSENT_KEY] === USER_DATA_CONSENT_VERSION;
+}
 
 async function storeUsageError(status, source) {
   await chrome.storage.local.set({
@@ -226,6 +233,10 @@ async function shouldUseRecentContentSnapshot(force) {
 
 async function runFetchUsage({ force = false } = {}) {
   try {
+    if (!await hasUserDataConsent()) {
+      return { ok: false, status: 'consent-required', source: 'background' };
+    }
+
     if (await shouldUseRecentContentSnapshot(force)) {
       return { ok: true, source: 'content-recent' };
     }
@@ -281,6 +292,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 async function restoreAndRefresh() {
+  if (!await hasUserDataConsent()) {
+    updateBadge(null);
+    return;
+  }
   const { codexUsage } = await chrome.storage.local.get('codexUsage');
   updateBadge(codexUsage);
   await fetchUsage();
@@ -291,9 +306,11 @@ chrome.runtime.onStartup.addListener(() => {
 });
 chrome.runtime.onInstalled.addListener((details) => {
   void restoreAndRefresh();
-  if (details.reason === 'install') {
-    void chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
-  }
+  void hasUserDataConsent().then((consented) => {
+    if (details.reason === 'install' || !consented) {
+      void chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+    }
+  });
 });
 
 function remainingPercent(windowData) {
@@ -308,19 +325,22 @@ function remainingPercent(windowData) {
 }
 
 function buildTitle(usage) {
-  const primaryRemaining = remainingPercent(usage?.primaryWindow || usage);
+  const primaryWindow = usage?.primaryWindow || usage;
+  const primaryRemaining = remainingPercent(primaryWindow);
   if (primaryRemaining === null) {
-    if (usage?.creditsUnlimited) return 'Credits: 不限量';
+    if (usage?.creditsUnlimited) return '剩余积分: 不限量';
     if (usage?.creditsBalance !== null && usage?.creditsBalance !== undefined) {
-      return `Credits: ${usage.creditsBalance}`;
+      return `剩余积分: ${usage.creditsBalance}`;
     }
     return 'Manifold Meter';
   }
-  const sessionSummary = `当前用量剩余: ${primaryRemaining}%`;
+  const windowSeconds = Number(primaryWindow?.limitWindowSeconds);
+  const primaryLabel = windowSeconds === 18000 ? '5小时额度' : '当前额度';
+  const sessionSummary = `${primaryLabel}剩余: ${primaryRemaining}%`;
   const weeklyRemaining = remainingPercent(weeklyWindow(usage));
 
   if (weeklyRemaining === null) return sessionSummary;
-  return `${sessionSummary} • 本周剩余: ${weeklyRemaining}%`;
+  return `${sessionSummary} • 本周额度剩余: ${weeklyRemaining}%`;
 }
 
 function updateBadge(usage) {
@@ -354,10 +374,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: false, status: 'forbidden' });
       return false;
     }
-    Promise.all([
-      cacheAccessToken(msg.accessToken),
-      cacheAccountId(msg.accountId)
-    ]).then(([tokenOk]) => sendResponse({ ok: tokenOk }));
+    hasUserDataConsent().then((consented) => {
+      if (!consented) {
+        sendResponse({ ok: false, status: 'consent-required' });
+        return;
+      }
+      Promise.all([
+        cacheAccessToken(msg.accessToken),
+        cacheAccountId(msg.accountId)
+      ]).then(([tokenOk]) => sendResponse({ ok: tokenOk }));
+    });
     return true;
   }
 

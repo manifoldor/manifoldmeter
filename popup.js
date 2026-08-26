@@ -1,4 +1,6 @@
 const CODEX_ANALYTICS_URL = 'https://chatgpt.com/codex/cloud/settings/analytics';
+const USER_DATA_CONSENT_KEY = 'codexUserDataConsent';
+const USER_DATA_CONSENT_VERSION = '2026-08-01';
 const hasExtensionApi = typeof chrome !== 'undefined' &&
   chrome.storage?.local &&
   chrome.runtime?.sendMessage;
@@ -17,6 +19,7 @@ const demoNow = parseDemoNow(searchParams.get('demo-now'));
 function createSurfaceDemoUsage() {
   const usage = createDemoUsage(demoNow);
   if (!searchParams.has('weekly-only') && !location.href.includes('weekly-only')) return usage;
+  usage.plan = 'pro';
   usage.primaryWindow = null;
   usage.usedPercent = undefined;
   usage.remainingPercent = undefined;
@@ -52,12 +55,12 @@ const elements = {
   syncLabel: document.getElementById('sync-label'),
   lastUpdate: document.getElementById('last-update'),
   dashboardButton: document.getElementById('dashboard-btn'),
-  refreshButton: document.getElementById('refresh-btn'),
   analyticsButton: document.getElementById('analytics-btn')
 };
 
 let latestUsage = null;
 let latestError = null;
+let userDataConsented = false;
 
 function setResetCreditDots(count) {
   elements.resetCreditsDots.replaceChildren();
@@ -83,25 +86,32 @@ function renderEmpty(error = null) {
   elements.emptySection.hidden = false;
 
   const status = String(error?.status ?? '');
-  if (status === '401' || status === '403') {
+  if (status === 'consent-required') {
+    elements.emptyTitle.textContent = '需要先确认数据使用';
+    elements.emptyCopy.textContent = '阅读数据说明并同意后，扩展才会连接和同步。';
+    elements.analyticsButton.textContent = '查看数据说明';
+  } else if (status === '401' || status === '403') {
     elements.emptyTitle.textContent = '登录状态已失效';
-    elements.emptyCopy.textContent = '请打开 ChatGPT 重新登录，然后返回刷新。';
+    elements.emptyCopy.textContent = '请打开 ChatGPT 重新登录，扩展会自动重试。';
+    elements.analyticsButton.textContent = '打开 Codex 用量页';
   } else if (error) {
     elements.emptyTitle.textContent = '暂时无法读取额度';
-    elements.emptyCopy.textContent = '请检查网络，并确认 Chrome 已登录 ChatGPT。';
+    elements.emptyCopy.textContent = '请检查网络或登录状态，扩展会自动重试。';
+    elements.analyticsButton.textContent = '打开 Codex 用量页';
   } else {
     elements.emptyTitle.textContent = '等待用量数据';
-    elements.emptyCopy.textContent = '请确认 Chrome 已登录 ChatGPT，然后刷新一次。';
+    elements.emptyCopy.textContent = '请确认 Chrome 已登录 ChatGPT，扩展会自动连接并同步。';
+    elements.analyticsButton.textContent = '打开 Codex 用量页';
   }
 }
 
-function describeWindow(windowData, fallback = '当前') {
+function describeWindow(windowData, fallback = '当前额度') {
   const seconds = Number(windowData?.limitWindowSeconds);
-  if (seconds === 18000) return '5小时';
-  if (seconds === 604800) return '本周';
+  if (seconds === 18000) return '5小时额度';
+  if (seconds === 604800) return '本周额度';
   if (Number.isFinite(seconds) && seconds > 0) {
-    if (seconds % 86400 === 0) return `${seconds / 86400}天`;
-    if (seconds % 3600 === 0) return `${seconds / 3600}小时`;
+    if (seconds % 86400 === 0) return `${seconds / 86400}天额度`;
+    if (seconds % 3600 === 0) return `${seconds / 3600}小时额度`;
   }
   return fallback;
 }
@@ -109,14 +119,14 @@ function describeWindow(windowData, fallback = '当前') {
 function setPrimaryMetric(primary, usage) {
   const primaryRemaining = primary ? remainingOf(primary) : null;
   const hasPrimaryPercent = primaryRemaining !== null && primaryRemaining !== undefined;
-  elements.primaryTitle.textContent = primary ? describeWindow(primary) : '当前用量';
+  elements.primaryTitle.textContent = primary ? describeWindow(primary) : '当前额度';
   elements.primaryValue.textContent = hasPrimaryPercent ? String(primaryRemaining) : '—';
   if (hasPrimaryPercent) {
     elements.primaryUnit.textContent = '% 剩余';
   } else if (usage.mode === 'credits') {
-    elements.primaryUnit.textContent = '按 Credits';
+    elements.primaryUnit.textContent = '按剩余积分';
   } else {
-    elements.primaryUnit.textContent = '动态限额';
+    elements.primaryUnit.textContent = '当前额度';
   }
 
   const primaryResetTime = formatResetTime(primary?.resetAt);
@@ -188,11 +198,11 @@ function render(usage, error = null) {
   elements.weeklyValue.textContent = weeklyRemaining === null ? '—' : String(weeklyRemaining);
   elements.weeklyReset.textContent = weekly
     ? formatWeeklyReset(weekly.resetAt)
-    : '未提供周额度';
+    : '未提供本周额度';
   setProgress(elements.weeklyTrack, elements.weeklyProgress, weeklyRemaining ?? 0);
   elements.weeklyTrack.setAttribute(
     'aria-valuetext',
-    weeklyRemaining === null ? '未提供周额度' : `剩余 ${weeklyRemaining}%`
+    weeklyRemaining === null ? '未提供本周额度' : `本周额度剩余 ${weeklyRemaining}%`
   );
   if (usage.creditsUnlimited) {
     elements.creditsValue.textContent = '∞';
@@ -234,13 +244,17 @@ function render(usage, error = null) {
   }
 }
 
-async function refresh() {
+async function syncNow() {
   if (!hasExtensionApi) {
-    render(createDemoUsage(demoNow));
+    render(createSurfaceDemoUsage());
     return;
   }
 
-  elements.refreshButton.disabled = true;
+  if (!userDataConsented) {
+    renderEmpty({ status: 'consent-required', source: 'popup' });
+    return;
+  }
+
   elements.syncLabel.textContent = '正在同步';
 
   try {
@@ -264,8 +278,6 @@ async function refresh() {
     } else {
       render(latestUsage, latestError);
     }
-  } finally {
-    elements.refreshButton.disabled = false;
   }
 }
 
@@ -277,21 +289,42 @@ elements.dashboardButton.addEventListener('click', () => {
 
 elements.analyticsButton.addEventListener('click', () => {
   if (hasExtensionApi) {
-    chrome.tabs.create({ url: CODEX_ANALYTICS_URL });
+    chrome.tabs.create({
+      url: userDataConsented
+        ? CODEX_ANALYTICS_URL
+        : chrome.runtime.getURL('onboarding.html')
+    });
   } else {
     window.open(CODEX_ANALYTICS_URL, '_blank', 'noopener');
   }
 });
 
-elements.refreshButton.addEventListener('click', refresh);
-
 if (hasExtensionApi) {
-  chrome.storage.local.get(['codexUsage', 'codexUsageError'], (data) => {
-    if (data.codexUsage) render(data.codexUsage, data.codexUsageError ?? null);
-    else renderEmpty(data.codexUsageError ?? null);
+  chrome.storage.local.get(USER_DATA_CONSENT_KEY, (data) => {
+    userDataConsented = data[USER_DATA_CONSENT_KEY] === USER_DATA_CONSENT_VERSION;
+    if (!userDataConsented) {
+      renderEmpty({ status: 'consent-required', source: 'popup' });
+      return;
+    }
+    chrome.storage.local.get(['codexUsage', 'codexUsageError'], (usageData) => {
+      if (usageData.codexUsage) {
+        render(usageData.codexUsage, usageData.codexUsageError ?? null);
+      } else {
+        renderEmpty(usageData.codexUsageError ?? null);
+      }
+      void syncNow();
+    });
   });
 
   chrome.storage.onChanged.addListener((changes) => {
+    if (changes[USER_DATA_CONSENT_KEY]) {
+      userDataConsented = changes[USER_DATA_CONSENT_KEY].newValue ===
+        USER_DATA_CONSENT_VERSION;
+    }
+    if (!userDataConsented) {
+      renderEmpty({ status: 'consent-required', source: 'popup' });
+      return;
+    }
     if (changes.codexUsage) latestUsage = changes.codexUsage.newValue ?? null;
     if (changes.codexUsageError) latestError = changes.codexUsageError.newValue ?? null;
     if (latestUsage) render(latestUsage, latestError);

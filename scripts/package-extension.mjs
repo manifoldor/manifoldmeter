@@ -32,8 +32,7 @@ const files = [
   'icons/icon16.png',
   'icons/icon48.png',
   'icons/icon128.png',
-  'icons/logo.svg',
-  'icons/refresh.svg'
+  'icons/logo.svg'
 ];
 
 const stage = await mkdtemp(join(tmpdir(), 'manifold-meter-package-'));

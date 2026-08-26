@@ -1,16 +1,16 @@
 :root {
   color-scheme: dark;
-  --bg: #151412;
-  --surface: #1b1916;
-  --text: #beb9af;
-  --strong: #cbc6bb;
-  --muted: #89847b;
-  --track: #302d28;
-  --moss: #81927a;
-  --amber: #ad9160;
-  --amber-dim: #3d3222;
-  --danger: #b97866;
-  --focus: #c5a975;
+  --bg: #0e0f0d;
+  --surface: #131411;
+  --text: #d8d4cb;
+  --strong: #e3dfd7;
+  --muted: #9c978e;
+  --track: #292825;
+  --moss: #9bad92;
+  --amber: #d0a65d;
+  --amber-dim: #82673d;
+  --danger: #cc806e;
+  --focus: #e0b568;
 }
 
 * {
@@ -43,6 +43,7 @@ button:focus-visible {
   padding: 22px 26px;
   display: flex;
   flex-direction: column;
+  font-variant-numeric: tabular-nums;
 }
 
 .brand-row,
@@ -69,7 +70,7 @@ button:focus-visible {
   margin: 0;
   color: var(--amber);
   font-size: var(--type-title-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-brand);
 }
 
@@ -99,8 +100,8 @@ button:focus-visible {
 .reset-credits-title {
   color: var(--text);
   font-size: var(--type-body-sm);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-default);
 }
 
 .reset-credits-row {
@@ -161,6 +162,7 @@ button:focus-visible {
   margin: 0 0 2px;
   color: var(--text);
   font-size: var(--type-body-sm);
+  font-weight: var(--weight-semibold);
 }
 
 .metric-row {
@@ -199,6 +201,7 @@ button:focus-visible {
   margin-top: 6px;
   overflow: hidden;
   background: var(--track);
+  border-radius: 1px;
 }
 
 .track span {
@@ -206,6 +209,7 @@ button:focus-visible {
   width: 0;
   height: 100%;
   background: var(--moss);
+  border-radius: inherit;
   transition: width 350ms ease;
 }
 
@@ -231,15 +235,15 @@ button:focus-visible {
 }
 
 .metrics.is-weekly-only .track {
-  height: 10px;
+  height: 4px;
   margin-top: 8px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(150, 169, 141, 0.16), rgba(186, 157, 101, 0.08));
+  border-radius: 1px;
+  background: var(--track);
 }
 
 .metrics.is-weekly-only .track span {
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--moss), #b0bd9f);
+  background: var(--moss);
 }
 
 .account-row {
@@ -258,8 +262,8 @@ button:focus-visible {
 
 .credits-row span {
   color: var(--text);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-default);
 }
 
 .credits-row strong {
@@ -336,42 +340,17 @@ button:focus-visible {
 }
 
 .primary-button {
+  width: 100%;
   flex: 1;
   border: 1px solid var(--amber);
-  color: #171511;
+  color: var(--bg);
   background: var(--amber);
   font-size: var(--type-body-sm);
   font-weight: var(--weight-semibold);
 }
 
 .primary-button:hover {
-  background: #bca06d;
-}
-
-.secondary-button {
-  min-width: 104px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid var(--amber-dim);
-  color: var(--amber);
-  background: transparent;
-  font-size: var(--type-body-sm);
-}
-
-.secondary-button:hover {
-  background: var(--surface);
-}
-
-.secondary-button:disabled {
-  opacity: 0.48;
-  cursor: wait;
-}
-
-.secondary-button img {
-  width: 17px;
-  height: 17px;
+  background: #dfb36a;
 }
 
 [hidden] {

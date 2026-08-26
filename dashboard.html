@@ -11,123 +11,148 @@
 </head>
 <body>
   <main class="dashboard">
-    <aside class="rail">
-      <div>
-        <img class="brand-logo" src="icons/logo.svg" alt="" width="48" height="48" />
-        <p class="brand">MANIFOLD</p>
-        <p class="product-name">METER</p>
-      </div>
-
-      <p id="last-update" class="last-update">等待首次同步</p>
-      <div class="status-row">
-        <p
-          id="sync-state"
-          class="sync-state"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <span class="status-dot" aria-hidden="true"></span>
-          <span id="sync-label">正在读取</span>
-        </p>
-        <button id="refresh-btn" class="refresh-button" type="button" title="刷新">
-          <img class="refresh-mark" src="icons/refresh.svg" alt="刷新" />
-        </button>
-      </div>
-
-      <div class="clock-area">
-        <time id="clock" class="clock">--:--</time>
-      </div>
-    </aside>
-
     <section class="content">
-      <p id="plan" class="plan">CODEX</p>
-      <button id="fullscreen-btn" class="fullscreen-button" type="button" title="全屏显示">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 3 21 3 21 9"></polyline>
-          <polyline points="9 21 3 21 3 15"></polyline>
-          <line x1="21" y1="3" x2="14" y2="10"></line>
-          <line x1="3" y1="21" x2="10" y2="14"></line>
-        </svg>
-      </button>
-      <section class="primary-metric" aria-labelledby="primary-title">
-        <div class="metric-grid">
-          <span class="metric-placeholder" aria-hidden="true"></span>
-          <div class="metric-top">
-            <div class="value-row">
-              <strong id="primary-value" class="primary-value">—</strong>
-              <span class="percent-symbol">%</span>
-              <span class="remaining-label">剩余</span>
-            </div>
-            <div class="reset-block">
-              <strong id="primary-reset" class="reset-value">—</strong>
-              <span id="primary-reset-suffix">重置</span>
-            </div>
-          </div>
-          <p id="primary-title" class="eyebrow metric-label">当前</p>
-          <div class="progress-right">
-            <div
-              id="primary-progress"
-              class="segmented-progress"
-              role="progressbar"
-              aria-label="当前用量剩余额度"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            ></div>
-            <div class="progress-scale" aria-hidden="true">
-              <span>0%</span>
-              <span>50%</span>
-              <span>100%</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="weekly-metric" aria-labelledby="weekly-title">
-        <div class="metric-grid">
-          <span class="metric-placeholder" aria-hidden="true"></span>
-          <div class="metric-top">
-            <div class="weekly-value-row">
-              <strong id="weekly-value" class="weekly-value">—</strong>
-              <span>% 剩余</span>
-            </div>
-            <p id="weekly-reset" class="weekly-reset">—</p>
-          </div>
-          <p id="weekly-title" class="eyebrow metric-label">本周</p>
-          <div class="progress-right">
-            <div
-              class="linear-progress"
-              role="progressbar"
-              aria-label="本周剩余额度"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            >
-              <span id="weekly-progress"></span>
-            </div>
-          </div>
-        </div>
-
-        <footer class="meta-row">
-          <p class="credits">
-            <span>Credits</span>
-            <strong id="credits-value">—</strong>
+      <header class="top-bar">
+        <div class="brand-group">
+          <img class="brand-logo" src="icons/logo.svg" alt="" width="36" height="36" />
+          <p class="brand-lockup">
+            <span class="brand">MANIFOLD</span>
+            <span class="product-name">METER</span>
           </p>
-          <section class="reset-credits" aria-labelledby="reset-credits-title" hidden>
-            <p id="reset-credits-title" class="reset-credits-title">Resets</p>
-            <div class="reset-credits-meter">
-              <strong id="reset-credits-value">—</strong>
-              <div
-                id="reset-credits-dots"
-                class="reset-credits-dots"
-                role="meter"
-                aria-label="可用重置次数"
-                aria-valuemin="0"
-                aria-valuemax="1"
-              ></div>
+        </div>
+
+        <p id="plan" class="plan">CODEX</p>
+
+        <div class="header-status">
+          <p id="last-update" class="last-update">等待首次同步</p>
+          <div class="status-row">
+            <p
+              id="sync-state"
+              class="sync-state"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="sync-label">正在读取</span>
+            </p>
+          </div>
+          <div class="clock-area">
+            <time id="clock" class="clock">--:--</time>
+          </div>
+          <button
+            id="fullscreen-btn"
+            class="fullscreen-button"
+            type="button"
+            title="全屏显示"
+            aria-label="全屏显示"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="metrics-area">
+        <section class="primary-metric" aria-labelledby="primary-title">
+          <div class="metric-grid">
+            <span class="metric-placeholder" aria-hidden="true"></span>
+            <div class="metric-top">
+              <div class="value-row">
+                <strong id="primary-value" class="primary-value">—</strong>
+                <span class="percent-symbol">%</span>
+                <span class="remaining-label">剩余</span>
+              </div>
+              <div class="reset-block">
+                <strong id="primary-reset" class="reset-value">—</strong>
+                <span id="primary-reset-suffix">重置</span>
+              </div>
             </div>
-          </section>
-        </footer>
-      </section>
+            <p id="primary-title" class="eyebrow metric-label">当前</p>
+            <div class="progress-right">
+              <div
+                id="primary-progress"
+                class="segmented-progress"
+                role="progressbar"
+                aria-label="5小时额度剩余百分比"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+              <div class="progress-scale" aria-hidden="true">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="weekly-metric" aria-labelledby="weekly-title">
+          <div class="metric-grid">
+            <span class="metric-placeholder" aria-hidden="true"></span>
+            <div class="metric-top">
+              <div class="weekly-value-row">
+                <strong id="weekly-value" class="weekly-value">—</strong>
+                <span>% 剩余</span>
+              </div>
+              <p id="weekly-reset" class="weekly-reset">—</p>
+            </div>
+            <p id="weekly-title" class="eyebrow metric-label">本周额度</p>
+            <div class="progress-right">
+              <div
+                id="weekly-linear-progress"
+                class="linear-progress"
+                role="progressbar"
+                aria-label="本周额度剩余百分比"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <span id="weekly-progress"></span>
+              </div>
+              <div id="weekly-segmented-area" class="weekly-segmented-area" hidden>
+                <div
+                  id="weekly-segmented-progress"
+                  class="segmented-progress"
+                  role="progressbar"
+                  aria-label="本周额度剩余百分比"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                ></div>
+                <div class="progress-scale" aria-hidden="true">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="meta-row">
+        <p class="credits">
+          <span>剩余积分</span>
+          <strong id="credits-value">—</strong>
+        </p>
+        <section class="reset-credits" aria-labelledby="reset-credits-title" hidden>
+          <p id="reset-credits-title" class="reset-credits-title">可用重置</p>
+          <div class="reset-credits-meter">
+            <strong id="reset-credits-value">—</strong>
+            <div
+              id="reset-credits-dots"
+              class="reset-credits-dots"
+              role="meter"
+              aria-label="可用重置次数"
+              aria-valuemin="0"
+              aria-valuemax="1"
+            ></div>
+          </div>
+        </section>
+      </footer>
 
       <section id="notice" class="notice" role="alert" aria-atomic="true" hidden>
         <div>

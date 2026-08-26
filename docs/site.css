@@ -1,13 +1,14 @@
 :root {
   color-scheme: dark;
-  --bg: #151412;
-  --surface: #1b1916;
-  --text: #beb9af;
-  --strong: #e0dbcf;
-  --muted: #827d74;
-  --moss: #81927a;
-  --amber: #d5ab62;
-  --line: #38342f;
+  --bg: #0e0f0d;
+  --surface: #131411;
+  --text: #d8d4cb;
+  --strong: #e3dfd7;
+  --muted: #9c978e;
+  --moss: #9bad92;
+  --amber: #d0a65d;
+  --line: #35342f;
+  --focus: #e0b568;
 }
 
 * {
@@ -79,6 +80,11 @@ a {
   color: var(--amber);
 }
 
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
 .eyebrow,
 .meta {
   margin: 4px 0 0;
@@ -89,13 +95,15 @@ a {
 
 .notice {
   padding: 18px 20px;
-  border: 1px solid #4e594a;
-  background: #1b201a;
-  color: #cbd2c7;
+  border: 1px solid #5b6856;
+  background: var(--surface);
+  color: var(--text);
 }
 
 .language-nav {
   margin-left: auto;
+  display: flex;
+  gap: 18px;
   white-space: nowrap;
 }
 
@@ -112,5 +120,11 @@ footer {
 
   header {
     align-items: flex-start;
+  }
+
+  .language-nav {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
   }
 }

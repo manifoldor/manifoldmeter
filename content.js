@@ -10,10 +10,17 @@ const RESET_CREDITS_PATH = '/backend-api/wham/rate-limit-reset-credits';
 const INITIAL_REFRESH_DELAY_MS = 1500;
 const VISIBILITY_REFRESH_COOLDOWN_MS = 2 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15_000;
+const USER_DATA_CONSENT_KEY = 'codexUserDataConsent';
+const USER_DATA_CONSENT_VERSION = '2026-08-01';
 
 let inFlight = null;
 let lastRefreshAt = 0;
 const { normalizeUsage } = CodexUsage;
+
+async function hasUserDataConsent() {
+  const data = await chrome.storage.local.get(USER_DATA_CONSENT_KEY);
+  return data[USER_DATA_CONSENT_KEY] === USER_DATA_CONSENT_VERSION;
+}
 
 function getAccessToken() {
   try {
@@ -65,6 +72,10 @@ async function requestBackgroundFallback() {
 async function runFetchAndStoreUsage() {
   lastRefreshAt = Date.now();
   try {
+    if (!await hasUserDataConsent()) {
+      return { ok: false, status: 'consent-required', source: 'content' };
+    }
+
     const accessToken = getAccessToken();
     const accountId = getAccountId();
     if (accessToken) {
@@ -150,13 +161,20 @@ function fetchAndStoreUsage() {
   return inFlight;
 }
 
-setTimeout(() => {
-  void fetchAndStoreUsage();
-}, INITIAL_REFRESH_DELAY_MS);
+void hasUserDataConsent().then((consented) => {
+  if (!consented) return;
+  setTimeout(() => {
+    void fetchAndStoreUsage();
+  }, INITIAL_REFRESH_DELAY_MS);
+});
 
 document.addEventListener('visibilitychange', () => {
   const cooldownElapsed = Date.now() - lastRefreshAt >= VISIBILITY_REFRESH_COOLDOWN_MS;
-  if (!document.hidden && cooldownElapsed) void fetchAndStoreUsage();
+  if (!document.hidden && cooldownElapsed) {
+    void hasUserDataConsent().then((consented) => {
+      if (consented) void fetchAndStoreUsage();
+    });
+  }
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

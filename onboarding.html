@@ -24,15 +24,27 @@
 
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">安装完成</p>
+        <p id="hero-eyebrow" class="eyebrow">安装完成</p>
         <h1>把 AI 用量<br />放到余光里。</h1>
         <p class="intro">
-          Manifold Meter 将 Codex 的当前用量、动态额度和重置时间，
+          Manifold Meter 将 Codex 的 <span class="term">5小时额度</span>、<span class="term">本周额度</span>、<span class="term">剩余积分</span>和<span class="term">可用重置</span>，
           变成适合工具栏与独立副屏的安静仪表。
         </p>
+        <p
+          id="connection-state"
+          class="connection-state"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >先连接 Codex 数据，扩展会在本机完成首次同步。</p>
+        <p class="consent-disclosure">
+          连接后，扩展会从 <span>chatgpt.com</span> 读取短期认证信息、账户标识和 Codex 用量/剩余积分元数据，
+          仅用于在本机显示额度与同步状态，不发送到开发者服务器。
+          <a href="https://manifoldor.github.io/manifoldmeter/privacy.html" target="_blank" rel="noopener">查看隐私政策</a>
+        </p>
         <div class="hero-actions">
-          <button id="open-dashboard-btn" class="primary-button" type="button">打开副屏仪表盘</button>
-          <button id="open-analytics-btn" class="text-button" type="button">连接 Codex 数据</button>
+          <button id="open-analytics-btn" class="primary-button" type="button">同意并连接 Codex 数据</button>
+          <button id="open-dashboard-btn" class="text-button" type="button">先预览副屏</button>
         </div>
       </div>
 
@@ -41,15 +53,15 @@
           <span>CODEX · PLUS</span>
           <span>同步正常</span>
         </div>
-        <p>当前用量</p>
+        <p>5小时额度</p>
         <div class="preview-value"><strong>57</strong><span>% 剩余</span></div>
         <div class="preview-track"><span></span></div>
         <div class="preview-week">
           <div>
-            <small>动态额度</small>
+            <small>本周额度</small>
             <strong>73%</strong>
           </div>
-          <span>7月10日 重置</span>
+          <span>7月12日 重置</span>
         </div>
       </div>
     </section>
@@ -63,7 +75,7 @@
       <article>
         <span>02</span>
         <h2>只在本机处理</h2>
-        <p>额度快照保存在浏览器本地，不上传聊天内容、Cookie 或个人资料。</p>
+        <p>额度快照保存在浏览器本地，不上传聊天内容、认证信息或账户资料到开发者服务器。</p>
       </article>
       <article>
         <span>03</span>
@@ -78,9 +90,9 @@
         <h2>三步就绪</h2>
       </div>
       <ol>
-        <li><span>1</span><p>打开一次 Codex 用量页，确认 ChatGPT 已登录。</p></li>
-        <li><span>2</span><p>从扩展弹窗打开副屏仪表盘，并拖到你的第二块屏幕。</p></li>
-        <li><span>3</span><p>点击右上角最大化按钮，全屏显示。</p></li>
+        <li><span>1</span><p>阅读数据说明，点击“同意并连接 Codex 数据”，确认 ChatGPT 已登录。</p></li>
+        <li><span>2</span><p>等待页面提示同步成功，额度快照只保存在当前设备。</p></li>
+        <li><span>3</span><p>打开副屏仪表盘，拖到第二块屏幕后全屏显示。</p></li>
       </ol>
     </section>
 

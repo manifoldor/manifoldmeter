@@ -96,6 +96,29 @@ describe('normalizeUsage', () => {
     assert.strictEqual(currentWindow(result), null);
   });
 
+  it('keeps Pro subscriptions weekly-only when no 5-hour window is returned', () => {
+    const payload = {
+      plan_type: 'pro',
+      rate_limit: {
+        allowed: true,
+        limit_reached: false,
+        secondary_window: {
+          used_percent: 27,
+          limit_window_seconds: 604800,
+          reset_after_seconds: 604800
+        }
+      }
+    };
+    const result = normalizeUsage(payload, { now: 1_700_000_000_000 });
+
+    assert.ok(result);
+    assert.strictEqual(result.plan, 'pro');
+    assert.strictEqual(result.primaryWindow, null);
+    assert.strictEqual(currentWindow(result), null);
+    assert.strictEqual(weeklyWindow(result), result.secondaryWindow);
+    assert.strictEqual(result.secondaryWindow.remainingPercent, 73);
+  });
+
   it('accepts dynamic window arrays from newer quota shapes', () => {
     const payload = {
       plan: 'business',

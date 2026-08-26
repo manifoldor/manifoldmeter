@@ -1,16 +1,18 @@
 :root {
   color-scheme: dark;
-  --bg: #151412;
-  --surface: #1b1916;
-  --surface-soft: #191714;
-  --text: #beb9af;
-  --strong: #d0cbc0;
-  --muted: #89847b;
-  --line: #34302a;
-  --moss: #81927a;
-  --amber: #ad9160;
-  --amber-dim: #665438;
-  --focus: #c5a975;
+  --bg: #0e0f0d;
+  --surface: #131411;
+  --surface-soft: #11120f;
+  --text: #d8d4cb;
+  --strong: #e3dfd7;
+  --muted: #9c978e;
+  --line: #35342f;
+  --track: #292825;
+  --moss: #9bad92;
+  --amber: #d0a65d;
+  --amber-dim: #82673d;
+  --danger: #cc806e;
+  --focus: #e0b568;
 }
 
 * {
@@ -70,7 +72,7 @@ button:focus-visible {
 .wordmark span {
   color: var(--amber);
   font-size: var(--type-title-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-brand);
 }
 
@@ -78,7 +80,7 @@ button:focus-visible {
   margin-top: 6px;
   color: var(--strong);
   font-size: var(--type-caption);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-brand);
 }
 
@@ -124,6 +126,48 @@ button:focus-visible {
   line-height: var(--leading-body);
 }
 
+.connection-state {
+  min-height: 24px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  line-height: var(--leading-body);
+}
+
+.consent-disclosure {
+  max-width: 510px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: var(--type-caption);
+  line-height: var(--leading-body);
+}
+
+.consent-disclosure span {
+  color: var(--text);
+}
+
+.consent-disclosure a {
+  color: var(--amber);
+  text-underline-offset: 3px;
+}
+
+.consent-disclosure a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+body[data-connection-state="connected"] .connection-state {
+  color: var(--moss);
+}
+
+body[data-connection-state="error"] .connection-state {
+  color: var(--danger);
+}
+
+.term {
+  white-space: nowrap;
+}
+
 .hero-actions {
   display: flex;
   align-items: center;
@@ -135,18 +179,21 @@ button:focus-visible {
   min-height: 48px;
   padding: 0 22px;
   border: 1px solid var(--amber);
-  color: #171511;
+  color: var(--bg);
   background: var(--amber);
   font-size: var(--type-body-sm);
   font-weight: var(--weight-semibold);
 }
 
 .primary-button:hover {
-  background: #bca06d;
+  background: #dfb36a;
 }
 
 .text-button {
-  padding: 10px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
   border: 0;
   color: var(--amber);
   background: transparent;
@@ -184,7 +231,7 @@ button:focus-visible {
   margin: 42px 0 0;
   color: var(--text);
   font-size: var(--type-title-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .preview-value {
@@ -209,13 +256,16 @@ button:focus-visible {
 .preview-track {
   height: 7px;
   margin-top: 20px;
-  background: #302d28;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--track);
 }
 
 .preview-track span {
   display: block;
   width: 57%;
   height: 100%;
+  border-radius: inherit;
   background: var(--moss);
 }
 
@@ -276,7 +326,7 @@ button:focus-visible {
   margin: 28px 0 10px;
   color: var(--strong);
   font-size: var(--type-title-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .principles p {
@@ -298,7 +348,7 @@ button:focus-visible {
   margin: 0;
   color: var(--strong);
   font-size: var(--type-title-lg);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .setup ol {

@@ -1,6 +1,8 @@
 const SEGMENT_COUNT = 50;
 const VISIBLE_REFRESH_MS = 60_000;
 const CODEX_ANALYTICS_URL = 'https://chatgpt.com/codex/cloud/settings/analytics';
+const USER_DATA_CONSENT_KEY = 'codexUserDataConsent';
+const USER_DATA_CONSENT_VERSION = '2026-08-01';
 const hasExtensionApi = typeof chrome !== 'undefined' &&
   chrome.storage?.local &&
   chrome.runtime?.sendMessage;
@@ -19,10 +21,14 @@ const {
   createDemoUsage
 } = FormatUtils;
 const demoNow = parseDemoNow(searchParams.get('demo-now'));
+const creditsFormatter = new Intl.NumberFormat('zh-CN', {
+  maximumFractionDigits: 2
+});
 
 function createSurfaceDemoUsage() {
   const usage = createDemoUsage(demoNow);
   if (!searchParams.has('weekly-only') && !location.href.includes('weekly-only')) return usage;
+  usage.plan = 'pro';
   usage.primaryWindow = null;
   usage.usedPercent = undefined;
   usage.remainingPercent = undefined;
@@ -39,7 +45,6 @@ const els = {
   plan: document.getElementById('plan'),
   syncState: document.getElementById('sync-state'),
   syncLabel: document.getElementById('sync-label'),
-  refreshBtn: document.getElementById('refresh-btn'),
   primaryMetric: document.querySelector('.primary-metric'),
   primaryValue: document.getElementById('primary-value'),
   primaryPercentSymbol: document.querySelector('.percent-symbol'),
@@ -50,7 +55,10 @@ const els = {
   primaryProgress: document.getElementById('primary-progress'),
   weeklyValue: document.getElementById('weekly-value'),
   weeklyReset: document.getElementById('weekly-reset'),
+  weeklyTrack: document.getElementById('weekly-linear-progress'),
   weeklyProgress: document.getElementById('weekly-progress'),
+  weeklySegmentedArea: document.getElementById('weekly-segmented-area'),
+  weeklySegmentedProgress: document.getElementById('weekly-segmented-progress'),
   creditsValue: document.getElementById('credits-value'),
   resetCredits: document.querySelector('.reset-credits'),
   resetCreditsValue: document.getElementById('reset-credits-value'),
@@ -66,21 +74,69 @@ const els = {
 let latestUsage = null;
 let latestError = null;
 let visibleRefreshTimer = null;
+let userDataConsented = false;
+const renderedFilledCounts = new WeakMap();
+let renderedResetDotCount = null;
 
-function buildSegments() {
+function updateText(element, value) {
+  const nextValue = String(value);
+  if (element.textContent === nextValue) return false;
+  element.textContent = nextValue;
+  return true;
+}
+
+function updateHidden(element, hidden) {
+  const nextValue = Boolean(hidden);
+  if (element.hidden === nextValue) return false;
+  element.hidden = nextValue;
+  return true;
+}
+
+function updateAttribute(element, name, value) {
+  const nextValue = String(value);
+  if (element.getAttribute(name) === nextValue) return false;
+  element.setAttribute(name, nextValue);
+  return true;
+}
+
+function updateData(element, name, value) {
+  const nextValue = String(value);
+  if (element.dataset[name] === nextValue) return false;
+  element.dataset[name] = nextValue;
+  return true;
+}
+
+function updateClass(element, name, enabled) {
+  const nextValue = Boolean(enabled);
+  if (element.classList.contains(name) === nextValue) return false;
+  element.classList.toggle(name, nextValue);
+  return true;
+}
+
+function updateStyle(element, property, value) {
+  const nextValue = String(value);
+  if (element.style[property] === nextValue) return false;
+  element.style[property] = nextValue;
+  return true;
+}
+
+function buildSegments(progress) {
   const fragment = document.createDocumentFragment();
   for (let index = 0; index < SEGMENT_COUNT; index += 1) {
     const segment = document.createElement('span');
     segment.className = 'segment';
+    if (index === Math.floor(SEGMENT_COUNT / 2)) segment.classList.add('is-half');
     segment.setAttribute('aria-hidden', 'true');
     fragment.appendChild(segment);
   }
-  els.primaryProgress.appendChild(fragment);
+  progress.appendChild(fragment);
 }
 
 function setResetCreditDots(count) {
-  els.resetCreditsDots.replaceChildren();
   const visibleCount = Number.isFinite(count) ? Math.max(0, Math.round(count)) : 0;
+  if (renderedResetDotCount === visibleCount) return;
+
+  els.resetCreditsDots.replaceChildren();
   const fragment = document.createDocumentFragment();
   for (let index = 0; index < visibleCount; index += 1) {
     const dot = document.createElement('span');
@@ -89,50 +145,75 @@ function setResetCreditDots(count) {
     fragment.appendChild(dot);
   }
   els.resetCreditsDots.appendChild(fragment);
+  renderedResetDotCount = visibleCount;
 }
 
-function setSegmentedProgress(percent) {
-  const normalizedPercent = Number.isFinite(Number(percent)) ? Number(percent) : 0;
+function setSegmentedProgress(progress, percent) {
+  const rawPercent = Number(percent);
+  const normalizedPercent = Number.isFinite(rawPercent)
+    ? Math.min(100, Math.max(0, rawPercent))
+    : 0;
   const filledCount = Math.round((normalizedPercent / 100) * SEGMENT_COUNT);
-  [...els.primaryProgress.children].forEach((segment, index) => {
-    segment.classList.toggle('is-filled', index < filledCount);
-    segment.classList.toggle('is-half', index === Math.floor(SEGMENT_COUNT / 2));
-  });
-  els.primaryProgress.setAttribute('aria-valuenow', String(normalizedPercent));
+  const renderedFilledCount = renderedFilledCounts.get(progress) ?? null;
+  if (renderedFilledCount !== filledCount) {
+    const segments = progress.children;
+    const start = renderedFilledCount === null
+      ? 0
+      : Math.min(renderedFilledCount, filledCount);
+    const end = renderedFilledCount === null
+      ? SEGMENT_COUNT
+      : Math.max(renderedFilledCount, filledCount);
+
+    for (let index = start; index < end; index += 1) {
+      segments[index].classList.toggle('is-filled', index < filledCount);
+    }
+    renderedFilledCounts.set(progress, filledCount);
+  }
+  updateAttribute(progress, 'aria-valuenow', normalizedPercent);
 }
 
 function setSyncState(state, label) {
-  els.syncState.dataset.state = state;
-  els.syncLabel.textContent = label;
+  updateData(els.syncState, 'state', state);
+  updateText(els.syncLabel, label);
 }
 
 function setNotice(error, hasUsage = false) {
   const show = Boolean(error);
-  els.notice.hidden = !show;
+  updateHidden(els.notice, !show);
   if (!show) return;
 
   const status = String(error.status ?? 'unknown');
-  if (status === '401' || status === '403') {
-    els.noticeTitle.textContent = '登录状态已失效';
-    els.noticeCopy.textContent = '打开 ChatGPT 用量页重新登录，再返回刷新。';
+  if (status === 'consent-required') {
+    updateText(els.noticeTitle, '需要先确认数据使用');
+    updateText(els.noticeCopy, '阅读数据说明并同意后，扩展才会连接和同步。');
+    updateText(els.openAnalyticsBtn, '查看数据说明');
+  } else if (status === '401' || status === '403') {
+    updateText(els.noticeTitle, '登录状态已失效');
+    updateText(els.noticeCopy, '打开 ChatGPT 用量页重新登录，扩展会自动重试。');
+    updateText(els.openAnalyticsBtn, '打开用量页');
   } else if (status === 'invalid-response') {
-    els.noticeTitle.textContent = '接口格式发生变化';
-    els.noticeCopy.textContent = '扩展保留了最后一次成功数据，请稍后再试。';
+    updateText(els.noticeTitle, '接口格式发生变化');
+    updateText(els.noticeCopy, '扩展保留了最后一次成功数据，请稍后再试。');
+    updateText(els.openAnalyticsBtn, '打开用量页');
   } else {
-    els.noticeTitle.textContent = '暂时无法更新';
-    els.noticeCopy.textContent = hasUsage
-      ? '当前显示上次成功数据，请检查网络或登录状态。'
-      : '请检查网络，并确认 Chrome 已登录 ChatGPT。';
+    updateText(els.noticeTitle, '暂时无法更新');
+    updateText(
+      els.noticeCopy,
+      hasUsage
+        ? '当前显示上次成功数据，请检查网络或登录状态。'
+        : '请检查网络，并确认 Chrome 已登录 ChatGPT。'
+    );
+    updateText(els.openAnalyticsBtn, '打开用量页');
   }
 }
 
-function describeWindow(windowData, fallback = '当前') {
+function describeWindow(windowData, fallback = '当前额度') {
   const seconds = Number(windowData?.limitWindowSeconds);
-  if (seconds === 18000) return '5小时';
-  if (seconds === 604800) return '本周';
+  if (seconds === 18000) return '5小时额度';
+  if (seconds === 604800) return '本周额度';
   if (Number.isFinite(seconds) && seconds > 0) {
-    if (seconds % 86400 === 0) return `${seconds / 86400}天`;
-    if (seconds % 3600 === 0) return `${seconds / 3600}小时`;
+    if (seconds % 86400 === 0) return `${seconds / 86400}天额度`;
+    if (seconds % 3600 === 0) return `${seconds / 3600}小时额度`;
   }
   return fallback;
 }
@@ -140,22 +221,23 @@ function describeWindow(windowData, fallback = '当前') {
 function setPrimaryMetric(primary, usage) {
   const primaryRemaining = primary ? remainingOf(primary) : null;
   const hasPrimaryPercent = primaryRemaining !== null && primaryRemaining !== undefined;
-  els.primaryTitle.textContent = primary ? describeWindow(primary) : '当前用量';
-  els.primaryValue.textContent = hasPrimaryPercent ? String(primaryRemaining) : '—';
-  els.primaryPercentSymbol.hidden = !hasPrimaryPercent;
+  updateText(els.primaryTitle, primary ? describeWindow(primary) : '当前额度');
+  updateText(els.primaryValue, hasPrimaryPercent ? primaryRemaining : '—');
+  updateHidden(els.primaryPercentSymbol, !hasPrimaryPercent);
   if (hasPrimaryPercent) {
-    els.primaryRemainingLabel.textContent = '剩余';
+    updateText(els.primaryRemainingLabel, '剩余');
   } else if (usage.mode === 'credits') {
-    els.primaryRemainingLabel.textContent = '按 Credits';
+    updateText(els.primaryRemainingLabel, '按剩余积分');
   } else {
-    els.primaryRemainingLabel.textContent = '动态限额';
+    updateText(els.primaryRemainingLabel, '当前额度');
   }
 
   const primaryResetTime = formatResetTime(primary?.resetAt);
-  els.primaryReset.textContent = primaryResetTime;
-  els.primaryResetSuffix.hidden = !primary || primaryResetTime === '--:--';
-  setSegmentedProgress(hasPrimaryPercent ? primaryRemaining : 0);
-  els.primaryProgress.setAttribute(
+  updateText(els.primaryReset, primaryResetTime);
+  updateHidden(els.primaryResetSuffix, !primary || primaryResetTime === '--:--');
+  setSegmentedProgress(els.primaryProgress, hasPrimaryPercent ? primaryRemaining : 0);
+  updateAttribute(
+    els.primaryProgress,
     'aria-valuetext',
     hasPrimaryPercent ? `剩余 ${primaryRemaining}%` : '未提供百分比额度'
   );
@@ -167,26 +249,37 @@ function renderResetCredits(resetCredits) {
   const hasCount = Number.isFinite(count);
   const displayCount = hasCount ? Math.min(10, Math.max(0, Math.round(count))) : 0;
   const overflow = Number.isFinite(rawCount) && rawCount > 10;
-  els.resetCredits.hidden = !hasCount;
+  updateHidden(els.resetCredits, !hasCount);
   if (!hasCount) {
-    els.resetCreditsValue.textContent = '';
+    updateText(els.resetCreditsValue, '');
     setResetCreditDots(0);
-    els.resetCreditsDots.setAttribute('aria-valuenow', '0');
-    els.resetCreditsDots.setAttribute('aria-valuemax', '1');
-    els.resetCreditsDots.setAttribute('aria-valuetext', '');
+    updateAttribute(els.resetCreditsDots, 'aria-valuenow', '0');
+    updateAttribute(els.resetCreditsDots, 'aria-valuemax', '1');
+    updateAttribute(els.resetCreditsDots, 'aria-valuetext', '');
     return;
   }
 
-  els.resetCredits.dataset.level = hasCount && displayCount > 0 && displayCount <= 3
-    ? 'low'
-    : 'normal';
-  els.resetCreditsValue.textContent = overflow ? '10+次' : `${displayCount}次`;
+  updateData(
+    els.resetCredits,
+    'level',
+    hasCount && displayCount > 0 && displayCount <= 3 ? 'low' : 'normal'
+  );
+  updateText(els.resetCreditsValue, overflow ? '10+次' : `${displayCount}次`);
   setResetCreditDots(displayCount);
-  els.resetCreditsDots.setAttribute('aria-valuenow', String(displayCount));
-  els.resetCreditsDots.setAttribute('aria-valuemax', String(Math.max(displayCount, 1)));
-  els.resetCreditsDots.setAttribute(
+  updateAttribute(els.resetCreditsDots, 'aria-valuenow', displayCount);
+  updateAttribute(els.resetCreditsDots, 'aria-valuemax', Math.max(displayCount, 1));
+  updateAttribute(
+    els.resetCreditsDots,
     'aria-valuetext',
     `可用重置次数 ${displayCount} 次`
+  );
+}
+
+function updateLastUpdated(now = useDemoData && demoNow ? demoNow : Date.now()) {
+  if (!latestUsage) return;
+  updateText(
+    els.lastUpdate,
+    formatUpdatedAt(latestUsage.ts, '等待首次同步', now)
   );
 }
 
@@ -212,38 +305,43 @@ function render(usage, error = null) {
     usage.allowed === false;
 
   const planName = usage.plan ? String(usage.plan).toUpperCase() : 'CHATGPT';
-  els.plan.textContent = `CODEX · ${planName}`;
+  updateText(els.plan, `CODEX · ${planName}`);
   renderResetCredits(usage.resetCredits);
-  els.content.classList.toggle('is-weekly-only', !primary && Boolean(secondary));
-  els.primaryMetric.hidden = !primary;
+  const weeklyOnly = !primary && Boolean(secondary);
+  updateClass(els.content, 'is-weekly-only', weeklyOnly);
+  updateHidden(els.primaryMetric, !primary);
+  updateHidden(els.weeklyTrack, weeklyOnly);
+  updateHidden(els.weeklySegmentedArea, !weeklyOnly);
   if (primary) setPrimaryMetric(primary, usage);
 
-  els.weeklyValue.textContent = secondaryRemaining === null ? '—' : String(secondaryRemaining);
-  els.weeklyReset.textContent = secondary
-    ? formatWeeklyReset(secondary.resetAt)
-    : '未提供周额度';
-  els.weeklyProgress.style.width = `${secondaryRemaining ?? 0}%`;
-  els.weeklyProgress.parentElement.setAttribute('aria-valuenow', String(secondaryRemaining ?? 0));
-  els.weeklyProgress.parentElement.setAttribute(
+  updateText(els.weeklyValue, secondaryRemaining === null ? '—' : secondaryRemaining);
+  updateText(
+    els.weeklyReset,
+    secondary ? formatWeeklyReset(secondary.resetAt) : '未提供本周额度'
+  );
+  updateStyle(els.weeklyProgress, 'width', `${secondaryRemaining ?? 0}%`);
+  setSegmentedProgress(els.weeklySegmentedProgress, secondaryRemaining ?? 0);
+  updateAttribute(els.weeklyTrack, 'aria-valuenow', secondaryRemaining ?? 0);
+  updateAttribute(
+    els.weeklyTrack,
     'aria-valuetext',
-    secondaryRemaining === null ? '未提供周额度' : `剩余 ${secondaryRemaining}%`
+    secondaryRemaining === null ? '未提供本周额度' : `本周额度剩余 ${secondaryRemaining}%`
+  );
+  updateAttribute(
+    els.weeklySegmentedProgress,
+    'aria-valuetext',
+    secondaryRemaining === null ? '未提供本周额度' : `本周额度剩余 ${secondaryRemaining}%`
   );
 
   if (usage.creditsUnlimited) {
-    els.creditsValue.textContent = '∞';
+    updateText(els.creditsValue, '∞');
   } else if (usage.creditsBalance !== null && usage.creditsBalance !== undefined) {
-    els.creditsValue.textContent = new Intl.NumberFormat('zh-CN', {
-      maximumFractionDigits: 2
-    }).format(usage.creditsBalance);
+    updateText(els.creditsValue, creditsFormatter.format(usage.creditsBalance));
   } else {
-    els.creditsValue.textContent = '—';
+    updateText(els.creditsValue, '—');
   }
 
-  els.lastUpdate.textContent = formatUpdatedAt(
-    usage.ts,
-    '等待首次同步',
-    useDemoData && demoNow ? demoNow : undefined
-  );
+  updateLastUpdated();
 
   if (blocked) {
     setSyncState('error', '额度已用尽');
@@ -264,8 +362,13 @@ async function refresh() {
     return;
   }
 
-  els.refreshBtn.disabled = true;
-  setSyncState('stale', '正在同步');
+  if (!userDataConsented) {
+    latestError = { status: 'consent-required', source: 'dashboard' };
+    setSyncState('stale', '等待用户确认');
+    setNotice(latestError);
+    return;
+  }
+
   try {
     const result = await chrome.runtime.sendMessage({ type: 'FETCH_NOW', force: true });
     if (!result?.ok) {
@@ -280,8 +383,6 @@ async function refresh() {
     latestError = { status: 'exception', source: 'dashboard' };
     setSyncState('error', '同步失败');
     setNotice(latestError);
-  } finally {
-    els.refreshBtn.disabled = false;
   }
 }
 
@@ -292,59 +393,70 @@ function stopVisibleRefresh() {
 }
 
 function startVisibleRefresh() {
-  if (useDemoData || document.hidden || visibleRefreshTimer) return;
+  if (useDemoData || !userDataConsented || document.hidden || visibleRefreshTimer) return;
   visibleRefreshTimer = setInterval(() => {
     if (!document.hidden) void refresh();
   }, VISIBLE_REFRESH_MS);
 }
 
 function tick() {
-  els.clock.textContent = formatClock(
-    useDemoData && demoNow ? new Date(demoNow) : undefined
-  );
-  if (latestUsage) {
-    const current = CodexUsage.currentWindow(latestUsage);
-    const weekly = CodexUsage.weeklyWindow(latestUsage);
-    els.content.classList.toggle('is-weekly-only', !current && Boolean(weekly));
-    els.primaryMetric.hidden = !current;
-    if (current) setPrimaryMetric(current, latestUsage);
-    els.weeklyReset.textContent = weekly
-      ? formatWeeklyReset(weekly.resetAt)
-      : '未提供周额度';
-    els.lastUpdate.textContent = formatUpdatedAt(
-      latestUsage.ts,
-      '等待首次同步',
-      useDemoData && demoNow ? demoNow : undefined
-    );
-  }
+  const now = useDemoData && demoNow ? demoNow : Date.now();
+  updateText(els.clock, formatClock(new Date(now)));
+  updateLastUpdated(now);
 }
 
 async function init() {
-  buildSegments();
+  buildSegments(els.primaryProgress);
+  buildSegments(els.weeklySegmentedProgress);
   tick();
   setInterval(tick, 1000);
 
   if (useDemoData) {
-    render(createDemoUsage(demoNow));
+    render(createSurfaceDemoUsage());
     return;
   }
 
-  const data = await chrome.storage.local.get(['codexUsage', 'codexUsageError']);
-  render(data.codexUsage ?? null, data.codexUsageError ?? null);
-  void refresh();
-  startVisibleRefresh();
+  const consentData = await chrome.storage.local.get(USER_DATA_CONSENT_KEY);
+  userDataConsented = consentData[USER_DATA_CONSENT_KEY] === USER_DATA_CONSENT_VERSION;
+  if (!userDataConsented) {
+    render(null, null);
+    setSyncState('stale', '等待用户确认');
+    setNotice({ status: 'consent-required', source: 'dashboard' });
+  } else {
+    const data = await chrome.storage.local.get(['codexUsage', 'codexUsageError']);
+    render(data.codexUsage ?? null, data.codexUsageError ?? null);
+    void refresh();
+    startVisibleRefresh();
+  }
 
   chrome.storage.onChanged.addListener((changes) => {
+    if (changes[USER_DATA_CONSENT_KEY]) {
+      userDataConsented = changes[USER_DATA_CONSENT_KEY].newValue ===
+        USER_DATA_CONSENT_VERSION;
+      if (!userDataConsented) {
+        stopVisibleRefresh();
+        render(null, null);
+        setSyncState('stale', '等待用户确认');
+        setNotice({ status: 'consent-required', source: 'dashboard' });
+        return;
+      }
+      void refresh();
+      startVisibleRefresh();
+    }
+    if (!userDataConsented) return;
     if (changes.codexUsage) latestUsage = changes.codexUsage.newValue ?? null;
     if (changes.codexUsageError) latestError = changes.codexUsageError.newValue ?? null;
     render(latestUsage, latestError);
   });
 }
 
-els.refreshBtn.addEventListener('click', refresh);
 els.openAnalyticsBtn.addEventListener('click', () => {
   if (hasExtensionApi) {
-    chrome.tabs.create({ url: CODEX_ANALYTICS_URL });
+    chrome.tabs.create({
+      url: userDataConsented
+        ? CODEX_ANALYTICS_URL
+        : chrome.runtime.getURL('onboarding.html')
+    });
   } else {
     window.open(CODEX_ANALYTICS_URL, '_blank', 'noopener');
   }
@@ -378,7 +490,9 @@ const collapseIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none
 
 function updateFullscreenIcon(isFullscreen) {
   els.fullscreenBtn.innerHTML = isFullscreen ? collapseIcon : expandIcon;
-  els.fullscreenBtn.title = isFullscreen ? '退出全屏' : '全屏显示';
+  const label = isFullscreen ? '退出全屏' : '全屏显示';
+  els.fullscreenBtn.title = label;
+  els.fullscreenBtn.setAttribute('aria-label', label);
 }
 
 async function toggleFullscreen() {
@@ -389,7 +503,11 @@ async function toggleFullscreen() {
       await document.exitFullscreen();
     }
   } catch {
-    updateFullscreenIcon(Boolean(document.fullscreenElement));
+    // Keep the control state aligned when fullscreen is unavailable.
+  } finally {
+    [0, 250, 750, 1500].forEach((delay) => {
+      setTimeout(() => updateFullscreenIcon(Boolean(document.fullscreenElement)), delay);
+    });
   }
 }
 

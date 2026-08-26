@@ -30,7 +30,7 @@
           id="primary-track"
           class="track"
           role="progressbar"
-          aria-label="当前用量剩余额度"
+          aria-label="5小时额度剩余百分比"
           aria-valuemin="0"
           aria-valuemax="100"
         >
@@ -39,7 +39,7 @@
       </div>
 
       <div class="metric-block">
-        <p class="metric-title">本周</p>
+        <p class="metric-title">本周额度</p>
         <div class="metric-row">
           <p class="metric-value"><strong id="weekly-value">—</strong><span>% 剩余</span></p>
           <span id="weekly-reset" class="metric-reset">—</span>
@@ -48,7 +48,7 @@
           id="weekly-track"
           class="track"
           role="progressbar"
-          aria-label="本周剩余额度"
+          aria-label="本周额度剩余百分比"
           aria-valuemin="0"
           aria-valuemax="100"
         >
@@ -58,11 +58,11 @@
 
       <div class="account-row">
         <div class="credits-row">
-          <span>Credits</span>
+          <span>剩余积分</span>
           <strong id="credits-value">—</strong>
         </div>
         <section class="reset-credits" aria-labelledby="reset-credits-title" hidden>
-          <span id="reset-credits-title" class="reset-credits-title">RESETS</span>
+          <span id="reset-credits-title" class="reset-credits-title">可用重置</span>
           <div class="reset-credits-row">
             <strong id="reset-credits-value">—</strong>
             <div
@@ -88,16 +88,12 @@
 
     <section id="empty-section" class="empty-state" hidden>
       <strong id="empty-title">等待用量数据</strong>
-      <p id="empty-copy">请确认 Chrome 已登录 ChatGPT，然后刷新一次。</p>
+      <p id="empty-copy">请先阅读数据说明并同意连接。</p>
       <button id="analytics-btn" type="button">打开 Codex 用量页</button>
     </section>
 
     <div class="actions">
       <button id="dashboard-btn" class="primary-button" type="button">打开副屏</button>
-      <button id="refresh-btn" class="secondary-button" type="button">
-        <img src="icons/refresh.svg" alt="" aria-hidden="true" />
-        <span>刷新</span>
-      </button>
     </div>
   </main>
 
