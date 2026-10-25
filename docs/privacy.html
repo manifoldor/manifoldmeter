@@ -12,7 +12,7 @@
     <img src="logo.svg" alt="" width="52" height="52" />
     <div>
       <h1>隐私政策</h1>
-      <p class="meta">Manifold Meter · 更新日期：2026 年 8 月 27 日</p>
+      <p class="meta">Manifold Meter · 更新日期：2026 年 10 月 25 日</p>
     </div>
     <nav class="language-nav" aria-label="页面导航">
       <a href="index.html">返回首页</a>
@@ -24,11 +24,11 @@
     <h2>概述</h2>
     <p>
       Manifold Meter 是一个本地优先的 Chrome 扩展，用于向用户展示其
-      Codex 用量、额度和重置时间。本政策说明扩展处理哪些数据、为何处理、
+      Codex 用量以及用户单独连接的 Claude 订阅额度和重置时间。本政策说明扩展处理哪些数据、为何处理、
       如何存储以及用户如何控制这些数据。
     </p>
     <p class="notice">
-      Manifold Meter 对从 Chrome 和 ChatGPT 获得的信息的使用遵守
+      Manifold Meter 对从 Chrome、ChatGPT 和 Claude 获得的信息的使用遵守
       Chrome Web Store 用户数据政策，包括 Limited Use（有限使用）要求。
       数据仅用于提供和改进扩展的单一用途，不会用于广告、画像或销售。
     </p>
@@ -40,6 +40,7 @@
       <li>认证信息：用于向 chatgpt.com 请求上述数据的短期访问令牌；浏览器也可能向同源请求附加现有 ChatGPT Cookie。</li>
       <li>账户标识：扩展会提取当前 ChatGPT 账户 ID，用于将用量请求路由到正确账户。</li>
       <li>会话响应可能包含姓名、邮箱等其他账户属性；扩展不提取、使用或保存这些属性。</li>
+      <li>如果用户另行连接 Claude：从 claude.ai 读取组织标识、组织名称、所选组织账户成员信息中的套餐类别、5 小时和周额度百分比及重置时间。账户响应中的姓名、邮箱等字段不提取或保存。扩展使用浏览器现有会话，不提取或保存 Claude Cookie。</li>
     </ul>
 
     <h3>显著披露与同意</h3>
@@ -48,11 +49,13 @@
       “同意并连接 Codex 数据”之前，扩展不会读取 ChatGPT 会话、账户标识或
       Codex 用量，也不会启动相关自动同步。
     </p>
+    <p>Claude 连接单独征求同意并申请 claude.ai 站点权限。用户未启用时，扩展不会请求 claude.ai 或读取 Claude 用量。</p>
 
     <h3>数据用途与传输</h3>
     <ul>
-      <li>数据仅用于显示 Codex 剩余额度、重置时间、同步状态和工具栏徽标。</li>
-      <li>网络请求仅发送至 <code>https://chatgpt.com</code>，用于取得用户请求显示的用量信息。</li>
+      <li>数据仅用于显示用户已连接服务的剩余额度、重置时间、同步状态和工具栏徽标。</li>
+      <li>Codex 网络请求发送至 <code>https://chatgpt.com</code>，用于取得用户请求显示的用量信息。</li>
+      <li>启用 Claude 后，额外向 <code>https://claude.ai</code> 请求组织列表和用量信息。</li>
       <li>数据不会发送到 Manifold Meter 开发者控制的服务器。</li>
       <li>数据不会被出售、用于个性化广告、信用评估或其他无关用途。</li>
       <li>除法律要求或保护用户安全所必需的情形外，不向其他第三方披露数据，也不允许人工读取。</li>
@@ -64,17 +67,18 @@
       <li>访问令牌和账户 ID 仅短暂保存在 Chrome 的内存会话存储 <code>chrome.storage.session</code> 中。</li>
       <li>浏览器重启、扩展重新加载、更新或停用时，上述会话数据会被清除。</li>
       <li>额度快照会被后续快照覆盖，并在卸载扩展时由 Chrome 清除。</li>
+      <li>Claude 组织标识、名称和额度快照仅存于本地；断开 Claude 时清除这些数据和站点权限。</li>
     </ul>
 
     <h3>用户选择</h3>
     <p>
       用户可以随时停用或卸载扩展，以停止所有数据处理。用户也可以退出
-      ChatGPT，使后续用量请求无法通过认证。
+      ChatGPT，使后续用量请求无法通过认证。用户可在连接页分别断开 Codex 或 Claude，并清除对应本地数据。
     </p>
 
     <h3>安全</h3>
     <p>
-      扩展使用 HTTPS 与 chatgpt.com 通信，不加载远程可执行代码，并使用
+      扩展使用 HTTPS 与 chatgpt.com 或 claude.ai 通信，不加载远程可执行代码，并使用
       Chrome 扩展存储隔离机制保护本地状态。
     </p>
 
@@ -88,13 +92,13 @@
 
   <section id="english" lang="en">
     <h2>Privacy Policy — English</h2>
-    <p class="meta">Updated: August 27, 2026</p>
+    <p class="meta">Updated: October 25, 2026</p>
     <p>
       Manifold Meter is a local-first Chrome extension that displays a user's
-      Codex usage, allowances, and reset times.
+      Codex usage and, when separately connected, Claude subscription allowances and reset times.
     </p>
     <p class="notice">
-      Manifold Meter's use of information received from Chrome and ChatGPT
+      Manifold Meter's use of information received from Chrome, ChatGPT, and Claude
       complies with the Chrome Web Store User Data Policy, including the
       Limited Use requirements. Data is used only to provide and improve the
       extension's single purpose and is never used for advertising, profiling,
@@ -107,6 +111,7 @@
       <li>Service metadata, including plan type and optional service credit balance.</li>
       <li>A short-lived access token and ChatGPT account ID used to request this data for the correct account.</li>
       <li>Session responses may contain other account attributes; the extension does not extract, use, or store names or email addresses.</li>
+      <li>If the user separately connects Claude, the extension reads the organization ID and name, the plan category from the selected organization’s account membership, usage percentages, and reset times from claude.ai using the existing browser session. It does not extract or store names, email addresses, or Claude cookies.</li>
     </ul>
 
     <h3>Prominent disclosure and consent</h3>
@@ -116,20 +121,23 @@
       identifier, or Codex usage, and does not begin related automatic syncing,
       until the user clicks “Agree and connect Codex data.”
     </p>
+    <p>Claude requires a separate consent action and optional claude.ai host permission. No Claude request is made before that action.</p>
 
     <h3>Use, sharing, and storage</h3>
     <ul>
-      <li>Data is used only to display Codex availability and synchronization status.</li>
-      <li>Requests are sent only to <code>https://chatgpt.com</code>. No data is sent to servers controlled by the developer.</li>
+      <li>Data is used only to display the connected services' allowances, reset times, and synchronization status.</li>
+      <li>Codex requests are sent to <code>https://chatgpt.com</code>. No data is sent to servers controlled by the developer.</li>
+      <li>After optional Claude connection, organization and usage requests are also sent to <code>https://claude.ai</code>.</li>
       <li>Data is not sold, used for personalized advertising, or disclosed for unrelated purposes.</li>
       <li>Normalized quota snapshots are stored locally on the device in <code>chrome.storage.local</code>.</li>
       <li>The access token and account ID are held only in in-memory <code>chrome.storage.session</code> and are cleared when Chrome restarts or the extension is reloaded, updated, or disabled.</li>
       <li>Uninstalling the extension removes its locally stored data.</li>
+      <li>Disconnecting Codex removes its local usage data and session credentials. Disconnecting Claude removes its local organization and usage data and revokes its host permission.</li>
     </ul>
 
     <h3>Your choices and contact</h3>
     <p>
-      You may disable or uninstall the extension at any time. For privacy or
+      You may disconnect Codex or Claude, disable, or uninstall the extension at any time. For privacy or
       support questions, contact
       <a href="mailto:linyishan@gmail.com">linyishan@gmail.com</a>.
     </p>
@@ -140,7 +148,7 @@
   </section>
 
   <footer>
-    <p>Manifold Meter is independent software and is not affiliated with or endorsed by OpenAI.</p>
+    <p>Manifold Meter is independent software and is not affiliated with or endorsed by OpenAI or Anthropic.</p>
   </footer>
 </body>
 </html>

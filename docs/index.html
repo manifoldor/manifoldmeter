@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Manifold Meter — Codex 用量监控 Chrome 扩展" />
+  <meta name="description" content="Manifold Meter — 在工具栏和副屏查看 Codex 与 Claude 订阅额度" />
   <title>Manifold Meter</title>
   <link rel="stylesheet" href="site.css" />
 </head>
@@ -17,19 +17,21 @@
   </header>
 
   <section>
-    <h2>把 Codex 用量放到余光里</h2>
+    <h2>把 AI 用量放到余光里</h2>
     <p>
-      Manifold Meter 是本地优先的 Chrome 扩展，用于显示 Codex
-      5小时额度、本周额度、重置时间、剩余积分和可用重置。
+      Manifold Meter 是本地优先的 Chrome 扩展，在工具栏和副屏显示已连接服务的
+      5 小时额度、本周额度、重置时间和同步状态。Codex 还可展示剩余积分与可用重置；
+      Claude 订阅额度可单独连接。在弹窗选择“双服务”，即可同时查看两项额度：
+      副屏左右并排，弹窗上下显示，各自保留套餐类别与更新状态。
     </p>
     <p>
-      扩展沿用浏览器中现有的 ChatGPT 登录状态，不需要 Manifold
-      账户，也不会将用量数据上传到开发者服务器。
+      两个服务分别授权。扩展沿用浏览器中已有的 ChatGPT 或 Claude 登录状态，
+      不需要 Manifold 账户，也不会将用量数据上传到开发者服务器。
     </p>
     <p class="notice">
-      数据说明：首次连接前，扩展会先征得你的明确同意。连接后仅处理来自
-      chatgpt.com 的短期认证信息、账户标识和 Codex 用量/剩余积分元数据，用于在本机
-      显示额度与同步状态；不会发送到开发者控制的服务器。
+      数据说明：连接 Codex 前会说明并征得同意，随后从 chatgpt.com 读取短期认证信息、
+      账户标识和用量元数据。Claude 需另行同意并授予 claude.ai 站点权限，随后读取组织标识、
+      订阅额度和重置时间。额度快照仅存于本机。
     </p>
   </section>
 
@@ -40,7 +42,7 @@
   </section>
 
   <footer>
-    <p>Independent software. Not affiliated with or endorsed by OpenAI.</p>
+    <p>Independent software. Not affiliated with or endorsed by OpenAI or Anthropic.</p>
   </footer>
 </body>
 </html>
